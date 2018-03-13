@@ -3,9 +3,43 @@ title: "Math571_project"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r}
+library(jsonlite)
+library(magrittr)
+library(tidyverse)
+library(lubridate)
 
+Connor_key <- "5b15a6f528e7486cbd51dd2f47265d25" # API key
+
+begin_date <- ymd("19891231")
+end_date <- ymd("19900101")
+temp_begin_date <- begin_date
+temp_end_date <- end_date
+selected_end_date <- ymd("19900201")
+
+# search limited to "Financial" articles
+# This should result in higher correlation to stock price changes.
+while (temp_end_date <= selected_end_date) {
+for (page in c(0:2)) {
+        art <- fromJSON(paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?begin_date=",temp_begin_date,"&end_date=",temp_end_date,"&api-key=",Connor_key,"&page=",page,"&fq=news_desk:(Financial)"), flatten = TRUE) %>%  data.frame()
+        if (page == 0) {
+                news_head <- c(as.character(temp_end_date),art$response.docs.headline.main)
+        } else {
+        news_head <- c(news_head,art$response.docs.headline.main)
+        }
+        Sys.sleep(1)
+}
+if (temp_begin_date == begin_date) {               
+        headlines <- data.frame(t(news_head),stringsAsFactors = F)
+} else {
+        headlines <- rbind(headlines,data.frame(t(news_head)))
+}
+temp_begin_date <- temp_begin_date + 1
+temp_end_date <-  temp_end_date + 1
+}
+
+View(headlines)
+
+WriteXLS::WriteXLS(headlines,"nyt_headlines.xls")
 ```
-
-
 
