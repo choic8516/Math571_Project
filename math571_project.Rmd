@@ -3,6 +3,7 @@ title: "Math571_project"
 output: html_document
 ---
 
+# Getting NYT headlines
 ```{r}
 library(jsonlite)
 library(magrittr)
@@ -47,4 +48,42 @@ View(headlines)
 #we can later combine all our excels files into one. 
 WriteXLS::WriteXLS(headlines,"nyt_headlines.xls")
 ```
+
+# Converting headlines into scores
+```{r}
+library(xlsx)
+library(tidytext)
+library(tidyverse)
+data <- read.xlsx("nyt_headlines.xls", sheetIndex = 1,stringsAsFactors=FALSE)
+#subset of the data above.
+test_data <- data[1:2,2:ncol(data)]
+
+# this score chart is arbitrary! We can choose other numbers
+temp_score_chart <- data.frame(sentiment = c("negative", "positive", "uncertainty", "litigious", "constraining", "superfluous"), scores = c(-1,1,-1,-1,-1,0), stringsAsFactors = F)
+
+# for this sentimental analysis I used Loughran and McDonald lexicon. Their lexicon is written specifically for finance. However, we have a lot of words from headlines that are missing in their lexicon. Lexicon specialized for finance is not easy to find. 
+
+#function to convert words to scores
+to_scores <- function(df) {
+        val <- df %>%
+                as.data.frame(stringsAsFactors = F) %>%
+                unnest_tokens(word,".") %>%
+                inner_join(get_sentiments("loughran"), by = "word") %>%
+                inner_join(temp_score_chart, by = "sentiment") %>%
+                summarise(sum(scores))
+        unlist(val)
+}
+
+#this code may be able to be written more efficiently. 
+for (i in c(1:nrow(test_data))) {
+        for (j in c(1:ncol(test_data))) {
+                test_data[i,j] = to_scores(test_data[i,j])
+        }
+}
+
+#result of conversion to scores
+test_data
+```
+
+
 
