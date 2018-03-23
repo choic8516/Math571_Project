@@ -1,0 +1,33 @@
+---
+title: "Math571_project"
+output: html_document
+---
+
+# Getting NYT headlines
+```{r}
+library(jsonlite)
+library(magrittr)
+library(tidyverse)
+library(lubridate)
+library(httr)
+library(stringr)
+
+cristobal_key <- "5b4e1b897deb448caa65b58d6c5941ab" # Please use your own API key. you can get it from nyt api website.
+#with this command I can get the historic data from a complete month
+url2<-paste0("https://api.nytimes.com/svc/archive/v1/1990/1.json","?api-key=",cristobal_key)
+df.json<-fromJSON(url2)
+#I extract the headlines from the json file
+headlines<-df.json$response$docs$headline
+#I extract the date and section name and add it to the data frame
+headlines<-cbind(headlines, df.json$response$docs$section_name,df.json$response$docs$pub_date)
+colnames(headlines)<-c("main","kicker","section_name","pub_date")
+#I identify the headlines from the "Business" category
+bus.indexes<-str_detect(headlines$section_name, "Business")
+bus.indexes[is.na(bus.indexes)]<-F
+#I create a subset of the data frame with only the business headlines
+headlines.bus<-headlines[bus.indexes,]
+head(headlines.bus)
+
+```
+
+
