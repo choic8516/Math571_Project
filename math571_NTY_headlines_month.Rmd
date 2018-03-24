@@ -13,8 +13,7 @@ library(httr)
 library(stringr)
 options(max.print=20)
 
-cristobal_key <- "5b4e1b897deb448caa65b58d6c5941ab" # Please use your own API key. you can get it from nyt api website.
-#with this command I can get the historic data from a complete month
+cristobal_key <-  # Insert API key here
 year<-1990 #not necessary with the for loop
 month<-1 #not necessary with the for loop
 ds.used<-character()
