@@ -9,8 +9,12 @@ library(jsonlite)
 library(magrittr)
 library(tidyverse)
 library(lubridate)
+library(httr)
 
 cristobal_key <- "5b4e1b897deb448caa65b58d6c5941ab" # Please use your own API key. you can get it from nyt api website. 
+
+
+
 
 begin_date <- ymd("19891231") # set your beginning date
 end_date <- ymd("19900101") # set you ending that which is only one day apart.
@@ -19,9 +23,17 @@ temp_end_date <- end_date
 selected_end_date <- ymd("19900201") # set the final end date for your search.
 
 # search limited to "Financial" articles
-# This should result in higher correlation to stock price changes than having articles from sports and politics, etc. 
-# It was hard for me to random sample from too many number of pages. It will take forever. 
-# I ran this code for just one month but it still took awhile(1 min?). It will depend on you laptop performance but we can divide our work and it will be fine. 
+page<-1
+urlGet<-paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?begin_date=",temp_begin_date,"&end_date=",temp_end_date,"&api-key=",cristobal_key,"&page=",page,"&fq=news_desk:(Financial)")
+
+json_file<-GET(urlGet)
+               
+art <- fromJSON(json_file, flatten = TRUE)
+
+ls.index<-sapply(art$response$docs,FUN = class)=="list"
+thing<-art$response$docs[!ls.index]
+View(thing)
+type$copyright
 # If you can improve my code plz do and let us know of any improvements.  
 while (temp_end_date <= selected_end_date) {
 for (page in c(0:2)) {
