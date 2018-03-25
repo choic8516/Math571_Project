@@ -76,6 +76,7 @@ if (count == 0) {
                 filter(type_of_material == "News")
         temp <- temp %>%
                 group_by(pub_date) %>%
+                filter(max(row_number()) > 10) %>%
                 nest()
         
         temp_1 <- data.frame(headline = t(sample(temp$data[[1]]$headline.main,size = num_samples)), stringsAsFactors = F)
@@ -93,6 +94,7 @@ temp_df <- temp_df %>%
                 filter(type_of_material == "News")
 temp_df <- temp_df %>%
                 group_by(pub_date) %>%
+                filter(max(row_number()) > 10) %>%
                 nest()
 
 
