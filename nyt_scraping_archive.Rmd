@@ -1,0 +1,193 @@
+---
+title: "Math571_project"
+output: html_document
+---
+
+# Getting NYT headlines
+```{r}
+library(jsonlite)
+library(magrittr)
+library(tidyverse)
+library(lubridate)
+library(httr)
+library(stringr)
+options(max.print=100)
+
+nyt.API.key <-"5b4e1b897deb448caa65b58d6c5941ab"  # Insert API key here
+year<-1990 #not necessary with the for loop
+month<-1 #not necessary with the for loop
+
+```
+
+```{r}
+ds.used<-character()
+
+
+for (year in c(2017:2017)){
+        #I create the empty data frame for the headlines
+        nyt.df<-data.frame()
+        for (month in c(1:12)){
+        
+                url.nyt.archive<-paste0("https://api.nytimes.com/svc/archive/v1/",year,"/"  
+                                        ,month,".json","?api-key=",nyt.API.key)
+                df.json<-fromJSON(url.nyt.archive)
+                
+                #I extract the headlines from the json file
+                #headlines<-df.json$response$docs$headline #use this until 2005
+                
+                #The structure of df.json$response$docs$headline changes in 1995-03 
+                #(a new column appears)so we need the following line to make it consistent
+                #Until 2005 use the following lines
+                headlines<-df.json$response$docs$headline[1:2]
+                
+                
+                #As of 2006 the structure of the data follows an irregular pattern
+                #some months the headlines are presented as data frame
+                #and other months as nested lists. So we need the following conditional
+                #structure to deal with different data types
+                head.class<-class(headlines)
+                if (head.class=="data.frame"){
+                section<-df.json$response$docs$section_name
+                
+                ifelse(year==2017&(month==2|month>=8),#month %in% c("2","8","9","10","11","12")
+                news.desk<-df.json$response$docs$new_desk,
+                news.desk<-df.json$response$docs$news_desk)
+                length(df.json$response$docs$new_desk)
+                #class(df.json$response$docs$new_desk)
+                date.pub<-ymd_hms(df.json$response$docs$pub_date)
+                }
+                
+
+                if (head.class=="list"){
+                list.processed<-sapply(df.json$response$docs$headline,
+                                       function(l) c(l$main,l$kicker)[1:2])
+                headlines<-plyr::ldply(list.processed, rbind)
+                dims<-sapply(list.processed,FUN = length)
+                missing.headlines<-which(dims!=2)
+                section<-df.json$response$docs$section_name[-missing.headlines]
+                date.pub<-ymd_hms(df.json$response$docs$pub_date)[-missing.headlines]
+                news.desk<-df.json$response$docs$news_desk[-missing.headlines]
+                }
+                
+                #I want to keep track of the data structures used
+                ds.used<-c(ds.used,paste0(year,"-",month," ",head.class))
+                
+                #I extract the date and section name and add it to the data frame
+                
+                headlines<-cbind(headlines,section, date.pub,news.desk)
+                
+                colnames(headlines)<-c("main","kicker","section_name","pub_date","news_desks")
+                #the following 2 lines are to store the section and date as character
+                #in de data frame instead as a factor
+                headlines$section_name<-as.character(headlines$section_name)
+                headlines$pub_date<-substr(as.character(headlines$pub_date),1,10)
+                nyt.df<-rbind(nyt.df,headlines)
+                log.data<-c(year,month,head.class,length(headlines$pub_date))
+                print(log.data)
+                write(paste(year,month,head.class,length(headlines$pub_date),format(Sys.time()
+                        , "%Y-%m-%d %H:%M")),"data_test/data_log.txt",append = T)
+        }
+        #I identify the headlines from the "Business" category
+        bus.indexes1<-str_detect(tolower(nyt.df$section_name), "business")
+        bus.indexes1[is.na(bus.indexes1)]<-F
+        bus.indexes2<-str_detect(tolower(nyt.df$news_desk), "(business|financial)")
+        bus.indexes2[is.na(bus.indexes2)]<-F
+        bus.indexes3<-str_detect(tolower(nyt.df$kicker), "(business|financial)")
+        bus.indexes3[is.na(bus.indexes3)]<-F
+        bus.indexes<-bus.indexes1 | bus.indexes2 | bus.indexes3
+        #I create a subset of the data frame with only the business headlines
+        nyt.df.bus<-nyt.df[bus.indexes,]
+        
+        write.csv(nyt.df,paste0("data_test/nyt_headlines_",year,".csv"))
+        write.csv(nyt.df.bus,paste0("data_test/nyt_headlines_bus_",year,".csv"))
+        
+
+}
+
+```
+
+```{r}
+#This chunk is just to check how many API requests I have left
+url.get<-paste0("https://api.nytimes.com/svc/archive/v1/",year,"/",month,".json","?api-key=",nyt.API.key)
+url.get2<-paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?begin_date=",
+        "20100305","&end_date=","20100306","&api-key=",nyt.API.key,"&page=0")
+get.json1<-GET(url.get)
+get.json2<-GET(url.get2)
+get.json1$headers[24:27]
+get.json2$headers[6:10]
+```
+```{r}
+data.frame(df.json$response)
+
+```
+
+```{r}
+#testing chunck
+df.old<-read.csv("data/nyt_headlines_bus_2010.csv")
+df.new<-read.csv("data_test/nyt_headlines_2010.csv")
+df.complete<-read.csv("data/nyt_headlines_2010.csv")
+df.old$pub_date<-substr(df.old$pub_date,1,10)
+df.complete$pub_date<-substr(df.complete$pub_date,1,10)
+
+df.old[str_detect(df.old$pub_date,"2010-03-0(5|6|7)"),2]
+df.new[str_detect(df.new$main,"(?=Apple)"),c(2,5)]
+df.new[str_detect(df.new$main,"(?=.*Apple)(?=.*iPad)"),c(2,5)]
+df.complete[str_detect(df.complete$main,"(?=.*Apple)(?=.*Selling)"),c(2,5)]
+df.new[str_detect(df.new$main,"(?=.*Apple)"),c(2,5)]
+df.complete[str_detect(df.complete$main,"^Apple"),c(2,5)]
+df.new[df.new$pub_date=="2010-03-05",]
+
+mail.nyt<-headlines[str_detect(headlines$pub_date,"2010-03-0(5|6|7)"),]
+rownames(mail.nyt)<-c()
+write.csv(mail.nyt[c(1,4)],"2010-03-0567-archive.csv")
+```
+
+
+```{r}
+
+
+
+
+#testing chunk
+#2004 ok
+#2007 sort of ok
+dim(df.json$response$docs)
+df.json$response$docs$headline
+unlist(df.json$response$docs$keywords)
+table(nyt.df$section_name)
+unname(sort(table(nyt.df.bus$pub_date)))
+indexes<-which(bus.indexes)
+tryThis[bus.indexes]
+nyt.df$section_name[1:100]
+str(df.json$response$docs$headline)
+df.json$response$docs$snippet[1]
+a<-df.json$response$meta
+file.size(a)
+```
+
+
+
+```{r}
+#testing chunk
+library(curl)
+myURL<-function(year,month){
+
+url.nyt.archive<-paste0("https://api.nytimes.com/svc/archive/v1/",year,"/"  
+                                        ,month,".json","?api-key=",cristobal_key)
+return(url.nyt.archive)
+}
+
+url.nyt.archive<-myURL(2007,1)
+df.json1<-fromJSON(url.nyt.archive,flatten = T)
+#str(df.json$response$docs$headline)
+
+url.nyt.archive<-myURL(2007,11)
+df.json2<-fromJSON(url.nyt.archive)
+
+
+
+class(df.json1$response$docs$headline)
+class(df.json2$response$docs$headline)
+```
+
+

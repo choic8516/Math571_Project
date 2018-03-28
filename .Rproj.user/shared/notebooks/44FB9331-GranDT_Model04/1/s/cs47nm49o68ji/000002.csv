@@ -1,0 +1,8 @@
+"0","```r
+#https://www.r-bloggers.com/reading-data-from-google-sheets-into-r/
+#install.packages(\"googlesheets\")
+library(googlesheets)
+u.2018.1<-\"https://docs.google.com/spreadsheets/d/e/2PACX-1vQxwQtGKeA6uM6uD6Upee_CW14HdquWTw-eKRNW7cTQPyoYkEoWjj9oSxg4STBEaGF3IbIXcpkDMqtf/pubhtml#\"
+u.2018.2_18<-\"https://docs.google.com/spreadsheets/d/e/2PACX-1vSMVBI_aNtA3zjmpC429g6hE0J4gLv0DIOkE-FkcbN9F3EySgq18BdtWOT_VzqMVh7i0sEbo0PZTYPr/pubhtml\"
+u.2018.2->\"https://docs.google.com/spreadsheets/d/e/2PACX-1vR2NaSon8LP5n4qLYrhTm8qnBbexXY0zaqKB0hoOGk1kj89F42j1RaYuogv3wFa1JQOSqvFLLiCo8-z/pubhtml\"
+```"

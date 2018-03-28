@@ -1,0 +1,88 @@
+---
+title: "Math571_project"
+output: html_document
+---
+
+# Getting NYT headlines version 1
+```{r}
+library(jsonlite)
+library(magrittr)
+library(tidyverse)
+library(lubridate)
+
+nyt.API.key <- "5b4e1b897deb448caa65b58d6c5941ab" # Please use your own API key. you can get it from nyt api website. 
+
+begin_date <- ymd("19891231") # set your beginning date
+end_date <- ymd("19900101") # set you ending that which is only one day apart.
+temp_begin_date <- begin_date
+temp_end_date <- end_date
+selected_end_date <- ymd("19900201") # set the final end date for your search.
+
+# search limited to "Financial" articles
+# This should result in higher correlation to stock price changes than having articles from sports and politics, etc. 
+# It was hard for me to random sample from too many number of pages. It will take forever. 
+# I ran this code for just one month but it still took awhile(1 min?). It will depend on you laptop performance but we can divide our work and it will be fine. 
+# If you can improve my code plz do and let us know of any improvements.
+temp_begin_date <- ymd("")
+temp_end_date <- ymd("19900201")
+page<-1
+while (temp_end_date <= selected_end_date) {
+for (page in c(0:2)) {
+        
+        art <- fromJSON(paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?begin_date=",temp_begin_date,"&end_date=",temp_end_date,"&api-key=",nyt.API.key,"&page=",page), flatten = TRUE) %>%  data.frame()
+        if (page == 0) {
+                news_head <- c(as.character(temp_end_date),art$response.docs.headline.main)
+        } else {
+        news_head <- c(news_head,art$response.docs.headline.main)
+        }
+        Sys.sleep(1)
+}
+if (temp_begin_date == begin_date) {               
+        headlines <- data.frame(t(news_head),stringsAsFactors = F)
+} else {
+        headlines <- rbind(headlines,data.frame(t(news_head)))
+}
+temp_begin_date <- temp_begin_date + 1
+temp_end_date <-  temp_end_date + 1
+}
+
+View(headlines)
+
+#returns excel file with headlines for selected dates above. 
+#we can later combine all our excels files into one. 
+WriteXLS::WriteXLS(headlines,"nyt_headlines.xls")
+```
+
+```{r}
+headlines<-c()
+temp_begin_date<- ymd("20100305")
+temp_end_date<- ymd("20100307")
+page<-0
+ 
+for (page in c(0:10000)){
+        art.temp <- fromJSON(paste0("http://api.nytimes.com/svc/search/v2/articlesearch.json?begin_date=",
+        temp_begin_date,"&end_date=",temp_end_date,"&api-key=",nyt.API.key,"&page=",page))
+        headlines<-c(headlines,art.temp$response$docs$headline$main[1:10])
+        if ((page*10>art.temp$response$meta$hits)) break
+        print(c(page,art.temp$response$meta$hits,length(headlines) ))
+        Sys.sleep(1.5)
+        
+}
+write.csv(headlines,"2010-03-0567_search_article.csv")
+
+dim(art.temp$response$docs)
+art.temp$response$docs$new_desk
+art.temp$response$meta$hits
+art.temp$response$docs$headline$main[1:50]
+head.proc<-toupper(headlines)
+
+str_replace_all(head.proc[1:10], "(?!\\w| ).", "")
+
+#March 2010 15376 hits
+#Archive 12991 hits
+
+#March 2010 5/6/7
+
+
+```
+
