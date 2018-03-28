@@ -1,5 +1,0 @@
-"0","art <- fromJSON(paste0(""http://api.nytimes.com/svc/search/v2/articlesearch.json?begin_date="",temp_begin_date,""&end_date="",temp_end_date,""&api-key="",Connor_key,""&page="",page,""&fq=news_desk:(Financial)""), flatten = TRUE) %>%  data.frame()
-"
-"2","Error in paste0(""http://api.nytimes.com/svc/search/v2/articlesearch.json?begin_date="",  : 
-  object 'Connor_key' not found
-"

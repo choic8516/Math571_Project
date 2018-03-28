@@ -1,8 +1,0 @@
-"0","```r
-sumFecha<-colSums(myData[myData$SF18==\"T\", c(10:16)],na.rm = T)
-capitan<-c(4,4,4,5,0,0,0)
-defensor<-c(5,7,7,0,0,0,0)
-vol<-c(0,0,6,4,0,0,0)
-arq<-c(0,0,0,4,0,0,0)
-sumFecha+capitan+defensor+vol+arq
-```"

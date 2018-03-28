@@ -1,3 +1,0 @@
-"0","```r
-View(myData[myData$Puesto==\"DEF\",])
-```"

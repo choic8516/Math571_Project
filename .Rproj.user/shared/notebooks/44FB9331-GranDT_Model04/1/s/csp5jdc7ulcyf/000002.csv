@@ -1,8 +1,0 @@
-"0","```r
-#install.packages(\"XML\")
-g1<-readGoogleSheet(u.2018.1)
-g2<-readGoogleSheet(u.2018.2)
-g1[[1]][1,2]
-```"
-"1","[1] \"ESTADÃSTICAS GRAN DT PRIMERA DIVISIÃ“N 2017/2018 PRIMERA PARTE - TODOS LOS PUNTOS EQUIPO POR EQUIPO FINALES\"
-"

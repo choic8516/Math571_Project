@@ -1,4 +1,0 @@
-"0","data_1 <- read.xlsx(""nyt_headlines.xls"", sheetIndex = 1,stringsAsFactors=FALSE)
-"
-"2","Error in loadWorkbook(file) : Cannot find nyt_headlines.xls
-"

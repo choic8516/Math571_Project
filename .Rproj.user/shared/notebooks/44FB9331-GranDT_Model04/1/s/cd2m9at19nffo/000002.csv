@@ -1,7 +1,0 @@
-"0","```r
-sel1<-cbind(datos2[c(1:4)], rowSums(datos2[c(6:15)],na.rm = T))[sel1$Puesto==\"DEF\",]
-
-```"
-"1","Error in `[.data.frame`(cbind(datos2[c(1:4)], rowSums(datos2[c(6:15)],  : 
-  object 'sel1' not found
-"
