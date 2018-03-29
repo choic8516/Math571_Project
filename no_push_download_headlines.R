@@ -7,9 +7,9 @@ library(xlsx)
 Connor_key <- "5b15a6f528e7486cbd51dd2f47265d25" #use your key!
 
 
-year <- 2004 #set year
-start_month <- 5 #starting month
-end_month <- 12 #ending month
+year <- 2006 #set year
+start_month <- 1 #starting month
+end_month <- 5 #ending month
 count <- 0 # cnt variable use within for loop
 num_samples <- 25 # set number of sample of articles to choose from all categories of new articels(i.e. sports, finance, business, etc.)
 
@@ -64,5 +64,5 @@ for (month in c(start_month:end_month)) {
 
 View(temp)
 
-write.xlsx(temp[,-2], "nyt_headlines_2004_12_31.xls", row.names = F)
+write.xlsx(temp[,-2], "nyt_headlines_example.xls", row.names = F)
 
