@@ -61,7 +61,7 @@ Connor_key <- "5b15a6f528e7486cbd51dd2f47265d25" #use your key!
 
 year <- 2000 #set year
 start_month <- 1 #starting month
-end_month <- 12 #ending month
+end_month <- 2 #ending month
 count <- 0 # cnt variable use within for loop
 num_samples <- 25 # set number of sample of articles to choose from all categories of new articels(i.e. sports, finance, business, etc.)
 
@@ -74,6 +74,7 @@ if (count == 0) {
         temp <- df.json$response$docs[c('type_of_material','headline.main',"pub_date")]
         temp <- temp %>%
                 filter(type_of_material == "News")
+        temp$pub_date <- as.Date(temp$pub_date)
         temp <- temp %>%
                 group_by(pub_date) %>%
                 filter(max(row_number()) > 10) %>%
@@ -92,6 +93,7 @@ else {
 temp_df <- df.json$response$docs[c('type_of_material','headline.main',"pub_date")]
 temp_df <- temp_df %>%
                 filter(type_of_material == "News")
+temp_df$pub_date <- as.Date(temp_df$pub_date)
 temp_df <- temp_df %>%
                 group_by(pub_date) %>%
                 filter(max(row_number()) > 10) %>%
