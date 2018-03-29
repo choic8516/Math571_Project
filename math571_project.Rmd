@@ -167,7 +167,9 @@ data_1 <- read.xlsx("nyt_headlines.xls", sheetIndex = 1,stringsAsFactors=FALSE)
 subset_of_data_1 <- data_1[1:2,-1]
 
 convert_to_score <- function(df) {
-        sentiment <- analyzeSentiment(df)
+        sentiment <- analyzeSentiment(df,
+                              rules=list("SentimentGI"=list(ruleSentiment, 
+                                                            loadDictionaryGI())))
         sentiment$SentimentGI # I chose here Harvard General Inquirer lexicon but you can also choose other lexicons. There are I think 3 other ones including Loughran and McDonald lexicon
 }
 
