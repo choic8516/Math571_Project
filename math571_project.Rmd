@@ -168,7 +168,7 @@ subset_of_data_1 <- data_1[1:2,-1]
 
 convert_to_score <- function(df) {
         sentiment <- analyzeSentiment(df)
-        sentiment$SentimentHE # I chose here Harvard General Inquirer lexicon but you can also choose other lexicons. There are I think 3 other ones including Loughran and McDonald lexicon
+        sentiment$SentimentGI # I chose here Harvard General Inquirer lexicon but you can also choose other lexicons. There are I think 3 other ones including Loughran and McDonald lexicon
 }
 
 # this following operation takes about 20 seconds for my laptop. I feel like it takes little too long. 
