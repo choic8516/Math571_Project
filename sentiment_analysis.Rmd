@@ -8,30 +8,41 @@ output: html_document
 library(xlsx)
 library(tidyverse)
 library(SentimentAnalysis)
+library(splitstackshape)
+year<-1989
 
-data_1 <- read.xlsx("nyt_headlines.xls", sheetIndex = 1,stringsAsFactors=FALSE)
-subset_of_data_1 <- data_1[1:2,-1]
-
+headlines<-read.csv(paste0("data/nyt_headlines_",year,".csv"),stringsAsFactors = F)
+num.days<-length(table(headlines$pub_date))
+headlines<-stratified(headlines,"pub_date",25)
+#sort(table(headlines$pub_date))
 #I added a restriction to the analyeSentiment function so it only calculates
 #with the GI dictionary, wich makes it much more efficient
+iter<-0
 convert_to_score <- function(df) {
         sentiment <- analyzeSentiment(df,
                               rules=list("SentimentGI"=list(ruleSentiment, 
                                                             loadDictionaryGI())))
-        return(sentiment$SentimentGI) 
+        assign("iter",iter+1, env=.GlobalEnv)
+        if (iter%%10==0) print(iter)
+        return(sentiment$SentimentGI)
 }
-sentiment <- analyzeSentiment(subset_of_data_1[1],
-                              rules=list("SentimentLM"=list(ruleSentiment, 
-                                                            loadDictionaryLM())))
-sentiment <- analyzeSentiment(subset_of_data_1[1],
-                              rules=list("SentimentGI"=list(ruleSentiment, 
-                                                            loadDictionaryGI())))
 
 # this following operation takes about 20 seconds for my laptop. I feel like it takes little too long. 
-data_sentiment <- lapply(subset_of_data_1[-1], convert_to_score)
-data_sentiment<-as.data.frame(data_sentiment)
-data_sentiment
-#write.csv(data_sentiment,"ignore_scores2.csv")
+data_sentiment <- lapply(headlines$main, convert_to_score)
+data_sentiment<-cbind(headlines,unlist(data_sentiment))[,c(5,2,6)]
+write.csv(data_sentiment,paste0("data/scores_",year,".csv"))
+
+days<-unique(data_sentiment$pub_date)
+heads.25<-data.frame()
+scores.25<-data.frame()
+for (day in days){
+        data.frame.sent<-data.frame(day,t(data_sentiment$main[data_sentiment$pub_date==day]))
+        heads.25<-rbind(heads.25,data.frame.sent)
+        data.frame.sent<-data.frame(day,t(data_sentiment$V2[data_sentiment$pub_date==day]))
+        scores.25<-rbind(scores.25,data.frame.sent)
+        
+}        
+
 ```
 
 

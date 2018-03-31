@@ -1,0 +1,44 @@
+---
+title: "Math571_project"
+output: html_document
+---
+
+# Getting NYT headlines
+```{r}
+# library(jsonlite)
+# library(magrittr)
+# library(tidyverse)
+# library(lubridate)
+# library(httr)
+# library(stringr)
+# library(RJSONIO)
+library(RCurl)
+options(max.print=100)
+
+nyt.API.key <-cristobal_key
+
+
+```
+
+```{r}
+ds.used<-character()
+
+
+for (year in c(2017:2017)){
+        #I create the empty data frame for the headlines
+        nyt.df<-data.frame()
+        for (month in c(1:12)){
+                
+        
+                url.nyt.archive<-paste0("https://api.nytimes.com/svc/archive/v1/",year,"/"  
+                                        ,month,".json","?api-key=",nyt.API.key)
+                raw_data <- getURL(url.nyt.archive)
+                filename<-paste0("data/json/archive_",year,"_",sprintf("%02d",month),".json")
+                write(raw_data,filename)
+                
+        }
+        print(filename)
+               
+}
+
+```
