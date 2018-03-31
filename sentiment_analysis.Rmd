@@ -9,40 +9,50 @@ library(xlsx)
 library(tidyverse)
 library(SentimentAnalysis)
 library(splitstackshape)
-year<-1989
 
-headlines<-read.csv(paste0("data/nyt_headlines_",year,".csv"),stringsAsFactors = F)
-num.days<-length(table(headlines$pub_date))
-headlines<-stratified(headlines,"pub_date",25)
-#sort(table(headlines$pub_date))
 #I added a restriction to the analyeSentiment function so it only calculates
 #with the GI dictionary, wich makes it much more efficient
-iter<-0
+
 convert_to_score <- function(df) {
         sentiment <- analyzeSentiment(df,
                               rules=list("SentimentGI"=list(ruleSentiment, 
                                                             loadDictionaryGI())))
         assign("iter",iter+1, env=.GlobalEnv)
-        if (iter%%10==0) print(iter)
+        if (iter%%50==0) print(c(iter, year))#this print is just to monitor progress
         return(sentiment$SentimentGI)
 }
 
-# this following operation takes about 20 seconds for my laptop. I feel like it takes little too long. 
-data_sentiment <- lapply(headlines$main, convert_to_score)
-data_sentiment<-cbind(headlines,unlist(data_sentiment))[,c(5,2,6)]
-write.csv(data_sentiment,paste0("data/scores_",year,".csv"))
 
-days<-unique(data_sentiment$pub_date)
-heads.25<-data.frame()
-scores.25<-data.frame()
-for (day in days){
-        data.frame.sent<-data.frame(day,t(data_sentiment$main[data_sentiment$pub_date==day]))
-        heads.25<-rbind(heads.25,data.frame.sent)
-        data.frame.sent<-data.frame(day,t(data_sentiment$V2[data_sentiment$pub_date==day]))
-        scores.25<-rbind(scores.25,data.frame.sent)
-        
-}        
-
+for (year in c(1989:1994)){
+        iter<-0 #dummy var to monitor progress printing in console
+        #I read the file with all healines
+        headlines<-read.csv(paste0("data/raw_data/nyt_headlines_",year,".csv"),stringsAsFactors = F)
+        #I get a random sample of 25 files per day
+        set.seed(year)
+        headlines<-stratified(headlines,"pub_date",25)
+        #I convert the healines to scores
+        data_sentiment <- lapply(headlines$main, convert_to_score)
+        data_sentiment<-cbind(headlines,unlist(data_sentiment))[,c(5,2,6)]
+        colnames(data_sentiment)[3]<-"score"
+        write.csv(data_sentiment,paste0("data/scores/nyt_headlines_",year,"_scored.csv"))
+        #I get a list of the dates in the headlines for that file 
+        days<-unique(data_sentiment$pub_date)
+        heads.25<-data.frame()
+        scores.25<-data.frame()
+        #the following code is to convert the data frame structure from
+        #1 line per healine to 1 line per day (with 25 colums of healines/scores)
+        for (day in days){
+                data.frame.sent<-data.frame(day,t(data_sentiment$main[data_sentiment$pub_date==day]))
+                heads.25<-rbind(heads.25,data.frame.sent)
+                data.frame.sent<-data.frame(day,t(data_sentiment$score[data_sentiment$pub_date==day]))
+                scores.25<-rbind(scores.25,data.frame.sent)
+                
+        }
+        colnames(heads.25)<-c("pub_date",paste0("headline.4",c(1:25)))
+        colnames(scores.25)<-c("pub_date",paste0("headline.4",c(1:25)))
+        WriteXLS::WriteXLS(heads.25,paste0("data/scores/nyt_headlines_",year,".xls"))
+        WriteXLS::WriteXLS(scores.25,paste0("data/scores/nyt_headlines_",year,"_scored.xls"))
+}
 ```
 
 
