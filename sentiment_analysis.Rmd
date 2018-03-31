@@ -27,6 +27,7 @@ for (year in c(1989:1994)){
         iter<-0 #dummy var to monitor progress printing in console
         #I read the file with all healines
         headlines<-read.csv(paste0("data/raw_data/nyt_headlines_",year,".csv"),stringsAsFactors = F)
+        headlines$pub_date<-substr(headlines$pub_date,1,10)
         #I get a random sample of 25 files per day
         set.seed(year)
         headlines<-stratified(headlines,"pub_date",25)
@@ -48,8 +49,8 @@ for (year in c(1989:1994)){
                 scores.25<-rbind(scores.25,data.frame.sent)
                 
         }
-        colnames(heads.25)<-c("pub_date",paste0("headline.4",c(1:25)))
-        colnames(scores.25)<-c("pub_date",paste0("headline.4",c(1:25)))
+        colnames(heads.25)<-c("pub_date",paste0("headline",c(1:25)))
+        colnames(scores.25)<-c("pub_date",paste0("headline",c(1:25)))
         WriteXLS::WriteXLS(heads.25,paste0("data/scores/nyt_headlines_",year,".xls"))
         WriteXLS::WriteXLS(scores.25,paste0("data/scores/nyt_headlines_",year,"_scored.xls"))
 }
