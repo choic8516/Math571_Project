@@ -202,7 +202,7 @@ for (i in (length(kk) - 2)) {
 final <- cbind(final, t(dates))
 
 # we may change these col names
-colnames(final) <- c("Very Negative", "Negative", "Moderately Negative", "Moderately Positive", "Postive", "Very Positive", "Date")
+colnames(final) <- c("Very Negative", "Negative", "Moderately Negative", "Negative Neuter", "Positive Neuter", "Moderately Positive", "Postive", "Very Positive"， "Date")
 
 View(final)
 ```
