@@ -2,9 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-math571_cristobal.Rmd
 cristobal_stuff
 data_test
-.gitignore
 test_cristobal*
 ignore*
