@@ -9,8 +9,9 @@ library(xlsx)
 library(tidyverse)
 library(SentimentAnalysis)
 
-data_1 <- read.xlsx("nyt_headlines.xls", sheetIndex = 1,stringsAsFactors=FALSE)
-subset_of_data_1 <- data_1[1:2,-1]
+file <- "nyt_headlines_2005_2008_2016_2017.xlsx"
+# file <- "nyt_headlines.xls"
+data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors=FALSE)
 
 #I added a restriction to the analyeSentiment function so it only calculates
 #with the GI dictionary, wich makes it much more efficient
@@ -20,17 +21,15 @@ convert_to_score <- function(df) {
                                                             loadDictionaryGI())))
         return(sentiment$SentimentGI) 
 }
-sentiment <- analyzeSentiment(subset_of_data_1[1],
-                              rules=list("SentimentLM"=list(ruleSentiment, 
-                                                            loadDictionaryLM())))
-sentiment <- analyzeSentiment(subset_of_data_1[1],
-                              rules=list("SentimentGI"=list(ruleSentiment, 
-                                                            loadDictionaryGI())))
 
 # this following operation takes about 20 seconds for my laptop. I feel like it takes little too long. 
-data_sentiment <- lapply(subset_of_data_1[-1], convert_to_score)
-data_sentiment<-as.data.frame(data_sentiment)
-data_sentiment
+data_sentiment <- lapply(data[,-1], convert_to_score)
+data_sentiment <- as.data.frame(data_sentiment)
+head(data_sentiment)
+result <- cbind(data[,1], data_sentiment)
+names(result)[1] <- "pub_date"
+head(result)
+tail(result)
 #write.csv(data_sentiment,"ignore_scores2.csv")
 ```
 
