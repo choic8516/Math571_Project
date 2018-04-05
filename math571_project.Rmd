@@ -178,4 +178,31 @@ subset_of_data_1[] <- lapply(subset_of_data_1, convert_to_score)
 subset_of_data_1
 ```
 
+# Scores classification
+```{r}
+library(xlsx)
+library(tidyverse)
+
+scores <- read.xlsx("connor_data/nyt_headlines_2000_scored.xls", sheetIndex = 1,stringsAsFactors=FALSE)
+sub_scores <- scores
+
+ll <- data.frame(t(sub_scores), stringsAsFactors = F)
+dates <- ll[1,]
+ll <- ll[-1,]
+ll[] <- lapply(ll, as.numeric) 
+
+kk <- lapply(ll,function(x) table(cut(t(x), breaks =  seq(-1, 1, by = .25))))
+
+final <- data.frame(rbind(kk$X1,kk$X2))
+
+for (i in (length(kk) - 2)) {
+        final <- rbind(final, kk[[i]]) 
+}
+
+final <- cbind(final, t(dates))
+
+colnames(final) <- c("Very Negative", "Negative", "Moderately Negative", "Moderately Positive", "Postive", "Very Positive", "Date")
+
+View(final)
+```
 
