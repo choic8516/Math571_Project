@@ -163,7 +163,9 @@ library(xlsx)
 library(tidyverse)
 library(SentimentAnalysis)
 
-data_1 <- read.xlsx("nyt_headlines.xls", sheetIndex = 1,stringsAsFactors=FALSE)
+data_1 <- read.xlsx("nyt_headlines_2005_2008_2016_2017.xlsx", sheetIndex = 1,stringsAsFactors=FALSE)
+data_1$pub_date <- as.Date(data_1$pub_date)
+# dara_1 <- fread
 subset_of_data_1 <- data_1[1:2,-1]
 
 convert_to_score <- function(df) {
