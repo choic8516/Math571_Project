@@ -185,7 +185,7 @@ subset_of_data_1
 library(xlsx)
 library(tidyverse)
 
-scores <- read.xlsx("connor_data/nyt_headlines_2000_scored.xls", sheetIndex = 1,stringsAsFactors=FALSE)
+scores <- read.xlsx("data/scores/nyt_headlines_2000_scored.xls", sheetIndex = 1,stringsAsFactors=FALSE)
 sub_scores <- scores
 
 ll <- data.frame(t(sub_scores), stringsAsFactors = F)
@@ -193,7 +193,7 @@ dates <- ll[1,]
 ll <- ll[-1,]
 ll[] <- lapply(ll, as.numeric) 
 
-kk <- lapply(ll,function(x) table(cut(t(x), breaks =  seq(-1, 1, by = .25))))
+kk <- lapply(ll,function(x) table(cut(t(x), breaks =  seq(-1, 1, by = .5))))
 
 final <- data.frame(rbind(kk$X1,kk$X2))
 
@@ -204,7 +204,7 @@ for (i in (length(kk) - 2)) {
 final <- cbind(final, t(dates))
 
 # we may change these col names
-colnames(final) <- c("Very Negative", "Negative", "Moderately Negative", "Negative Neuter", "Positive Neuter", "Moderately Positive", "Postive", "Very Positive"， "Date")
+colnames(final) <- c("Very Negative", "Negative", "Postive", "Very Positive", "Date")
 
 View(final)
 ```
