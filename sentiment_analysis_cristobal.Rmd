@@ -8,9 +8,6 @@ output: html_document
 library(xlsx)
 library(tidyverse)
 library(SentimentAnalysis)
-
-file <- "nyt_headlines.xls"
-data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors=FALSE)
 library(splitstackshape)
 
 #I added a restriction to the analyeSentiment function so it only calculates
@@ -25,17 +22,8 @@ convert_to_score <- function(df) {
         return(sentiment$SentimentGI)
 }
 
-# This following operation takes about 20 seconds for my laptop. I feel like it takes little too long. 
-data_sentiment <- lapply(data[,-1], convert_to_score)
-data_sentiment <- as.data.frame(data_sentiment)
-head(data_sentiment)
-result <- cbind(data[,1], data_sentiment)
-names(result)[1] <- "pub_date"
-head(result)
-tail(result)
-write.xlsx(result, "nyt_headlines_score_2005.xlsx", row.names = F)
 
-for (year in c(1989:1994)){
+for (year in c(2008:2016)){
         iter<-0 #dummy var to monitor progress printing in console
         #I read the file with all healines
         headlines<-read.csv(paste0("data/raw_data/nyt_headlines_",year,".csv"),stringsAsFactors = F)
