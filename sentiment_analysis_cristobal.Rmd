@@ -31,11 +31,13 @@ for (year in c(2008:2016)){
         #I get a random sample of 25 files per day
         set.seed(year)
         headlines<-stratified(headlines,"pub_date",25)
+        #the following line solves the problem with non-english characters
+        headlines$main<-iconv(headlines$main, to="ASCII//TRANSLIT")
         #I convert the healines to scores
         data_sentiment <- lapply(headlines$main, convert_to_score)
         data_sentiment<-cbind(headlines,unlist(data_sentiment))[,c(5,2,6)]
         colnames(data_sentiment)[3]<-"score"
-        write.csv(data_sentiment,paste0("data/scores/nyt_headlines_",year,"_scored.csv"))
+        write.csv(data_sentiment,paste0("data/csv/nyt_headlines_",year,"_scored.csv"))
         #I get a list of the dates in the headlines for that file 
         days<-unique(data_sentiment$pub_date)
         heads.25<-data.frame()
