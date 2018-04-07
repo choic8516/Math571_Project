@@ -22,8 +22,9 @@ convert_to_score <- function(df) {
         return(sentiment$SentimentGI)
 }
 
+#dates 2008 to 2016 we have from reddit and nyt
 
-for (year in c(2008:2016)){
+for (year in c(2011:2016)){
         iter<-0 #dummy var to monitor progress printing in console
         #I read the file with all healines
         headlines<-read.csv(paste0("data/raw_data/nyt_headlines_",year,".csv"),stringsAsFactors = F)
