@@ -9,7 +9,7 @@ library(xlsx)
 library(tidyverse)
 library(SentimentAnalysis)
 
-file <- "nyt_headlines.xls"
+file <- "headlines_combined.xlsx"
 data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors=FALSE)
 library(splitstackshape)
 

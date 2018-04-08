@@ -1,8 +1,10 @@
 #Date formating
 #Use this file if your date in data is not formatted
 library(xlsx)
-file <- "nyt_headlines_2005_2008_2016_2017.xlsx"
+file <- "nyt_headlines_2005_formated.xlsx"
 data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors=FALSE)
+str(data)
+data[,1] <- 
 need_format <- is.na(as.Date(data[,1]))
 date <- data[,1]
 data[,1] <- as.Date(data[,1])
