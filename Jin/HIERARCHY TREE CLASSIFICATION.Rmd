@@ -1,0 +1,25 @@
+---
+title: "HIERARCHY TREE CLASSIFICATION"
+author: "Jingwei Li"
+date: "April 19, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Kaggle data
+```{r setup, include=FALSE}
+library(xlsx)
+file <- file.path('../Connor/Complete Data/kaggle_headlines_scored_classified.xlsx')
+k_data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors = F)
+```
+
+
+
+## NYT data
+```{r}
+file <- file.path('../Connor/Complete Data/nyt_headlines_combined_score_classfied.xls')
+nyt_data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors = F)
+```
