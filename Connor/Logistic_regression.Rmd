@@ -1,0 +1,146 @@
+---
+title: "Logistic Regression"
+output: html_notebook
+author: Connor Choi
+---
+
+# Using Kaggle dataset w/ score classfication
+
+## caret package
+```{r}
+require(xlsx)
+raw_data <- read.xlsx("Complete Data/kaggle_headlines_scored_classified.xlsx", sheetIndex = 1, stringsAsFactors = F)
+# date_col <- raw_data$Date
+# raw_data[] <- lapply(raw_data, function(x) ifelse(is.na(x), 0, x))
+raw_data$Date <- as.Date(raw_data$Date)
+raw_data$Label <- as.factor(raw_data$Label)
+
+levels(raw_data$Label) <- make.names(levels(factor(raw_data$Label)))
+
+train_raw_data <- raw_data[raw_data$Date < as.Date("2016-01-01"),]
+test_raw_data <- raw_data[raw_data$Date >= as.Date("2016-01-01"),]
+train_raw_data <- subset(train_raw_data, select = -c(Date))
+test_raw_data <- subset(test_raw_data, select = -c(Date))
+stopifnot((nrow(train_raw_data) + nrow(test_raw_data)) == nrow(raw_data))
+
+library(caret)
+
+log_control <- trainControl(method = "cv", number = 3, returnResamp = "all",
+                       classProbs = TRUE, summaryFunction = twoClassSummary)
+# log_control <- trainControl(method='cv', number=3, returnResamp='none')
+log_model <- train(Label ~., data = train_raw_data, method='glmnet', trControl=log_control, metric = "ROC", tuneGrid = expand.grid(.alpha = seq(.05, 1, length = 15), .lambda = c((1:5)/10)), family="binomial")
+test_pred <- predict(log_model, newdata = test_raw_data)
+
+confusionMatrix(test_pred, test_raw_data$Label)
+```
+
+## ROC
+```{r}
+library(ROCR)
+# prediction probabilities of test data classes
+probs <- predict.train(object = log_model, newdata = test_raw_data[,-6], type='prob')[,1]
+isPositiveClass <- test_raw_data[,6] == 'X0' # for a ROC curve there is a positive class (true match rate...) - defining that class here
+pred <- prediction(probs, isPositiveClass)
+perf <- performance(pred, 'tpr', 'fpr')
+# plot: either
+plot(perf, lwd=2, col=3)
+```
+
+
+# Using Kaggle dataset w/ 3rd day prediction
+```{r}
+fourth_day_pred_data <- cbind(raw_data[1:(nrow(raw_data)-3),-c(6,7)], raw_data[2:(nrow(raw_data)-2),-c(6,7)], raw_data[3:(nrow(raw_data)-1),-c(6,7)], raw_data[4:nrow(raw_data), c("Label", "Date")])
+for (i in 1:(length(colnames(fourth_day_pred_data))-2)) {
+        if (i <= 5) { colnames(fourth_day_pred_data)[i] <- paste0(colnames(fourth_day_pred_data)[i],"_",1)}
+        else if (i >= 6 & i < 11) { colnames(fourth_day_pred_data)[i] <- paste0(colnames(fourth_day_pred_data)[i],"_",2) }
+        else if (i >= 11) { colnames(fourth_day_pred_data)[i] <- paste0(colnames(fourth_day_pred_data)[i],"_",3) }
+}
+colnames(fourth_day_pred_data)[ncol(fourth_day_pred_data) - 1] <- "Label_4"
+fourth_day_pred_data$Date <- as.Date(fourth_day_pred_data$Date)
+
+levels(fourth_day_pred_data$Label_4) <- make.names(levels(factor(fourth_day_pred_data$Label_4)))
+
+train_raw_data_1 <- fourth_day_pred_data[fourth_day_pred_data$Date < as.Date("2016-01-01"),]
+test_raw_data_1 <- fourth_day_pred_data[fourth_day_pred_data$Date >= as.Date("2016-01-01"),]
+train_raw_data_1 <- subset(train_raw_data_1, select = -c(Date))
+test_raw_data_1 <- subset(test_raw_data_1, select = -c(Date))
+stopifnot((nrow(train_raw_data_1) + nrow(test_raw_data_1)) == nrow(fourth_day_pred_data))
+
+```
+
+## caret package
+```{r}
+library(caret)
+
+log_control_1 <- trainControl(method = "cv", number = 3, returnResamp = "all",
+                       classProbs = TRUE, summaryFunction = twoClassSummary)
+# log_control <- trainControl(method='cv', number=3, returnResamp='none')
+log_model_1 <- train(Label_4 ~., data = train_raw_data_1, method='glmnet', trControl=log_control_1, metric = "ROC", tuneGrid = expand.grid(.alpha = seq(.05, 1, length = 15), .lambda = c((1:5)/10)), family="binomial")
+test_pred_1 <- predict(log_model_1, newdata = test_raw_data_1)
+
+confusionMatrix(test_pred_1, test_raw_data_1$Label_4)
+```
+
+# Using NYT dataset w/ score classfication
+```{r}
+raw_data_1 <- read.csv("Complete Data/classified_scores_&_stock_movement_1.csv", stringsAsFactors = F)
+raw_data_1$Date <- as.Date(raw_data_1$Date)
+raw_data_1$Direction <- as.factor(raw_data_1$Direction)
+raw_data_1 <- raw_data_1[complete.cases(raw_data_1),]
+stopifnot(sum(is.na(raw_data_1)) == 0)
+levels(raw_data_1$Direction) <- make.names(levels(factor(raw_data_1$Direction)))
+# levels(all.dat$target) <- make.names(levels(factor(all.dat$target)))
+
+train_raw_data_2 <- raw_data_1[raw_data_1$Date < as.Date("2004-01-01"),]
+test_raw_data_2 <- raw_data_1[raw_data_1$Date >= as.Date("2004-01-01") & raw_data_1$Date <= as.Date("2005-12-31"),]
+train_raw_data_2 <- subset(train_raw_data_2, select = -c(Date))
+test_raw_data_2 <- subset(test_raw_data_2, select = -c(Date))
+```
+
+## caret package
+```{r}
+library(caret)
+
+log_control_2 <- trainControl(method = "cv", number = 3, returnResamp = "all",
+                       classProbs = TRUE, summaryFunction = twoClassSummary)
+# log_control <- trainControl(method='cv', number=3, returnResamp='none')
+log_model_2 <- train(Direction ~., data = train_raw_data_2, method='glmnet', trControl=log_control_2, metric = "ROC", tuneGrid = expand.grid(.alpha = seq(.05, 1, length = 15), .lambda = c((1:5)/10)), family="binomial")
+test_pred_2 <- predict(log_model_2, newdata = test_raw_data_2)
+
+confusionMatrix(test_pred_2, test_raw_data_2$Direction)
+```
+
+# Using NYT dataset w/ 3rd day prediction
+```{r}
+# head(raw_data_1)
+# head(fourth_day_pred_data_1)
+
+fourth_day_pred_data_1 <- cbind(raw_data_1[1:(nrow(raw_data_1)-3),-c(6,7)], raw_data_1[2:(nrow(raw_data_1)-2),-c(6,7)], raw_data_1[3:(nrow(raw_data_1)-1),-c(6,7)], raw_data_1[4:nrow(raw_data_1), c("Direction", "Date")])
+for (i in 1:(length(colnames(fourth_day_pred_data_1))-2)) {
+        if (i <= 5) { colnames(fourth_day_pred_data_1)[i] <- paste0(colnames(fourth_day_pred_data_1)[i],"_",1)}
+        else if (i >= 6 & i < 11) { colnames(fourth_day_pred_data_1)[i] <- paste0(colnames(fourth_day_pred_data_1)[i],"_",2) }
+        else if (i >= 11) { colnames(fourth_day_pred_data_1)[i] <- paste0(colnames(fourth_day_pred_data_1)[i],"_",3) }
+}
+colnames(fourth_day_pred_data_1)[ncol(fourth_day_pred_data_1) - 1] <- "Label_4"
+fourth_day_pred_data_1$Date <- as.Date(fourth_day_pred_data_1$Date)
+
+levels(fourth_day_pred_data_1$Label_4) <- make.names(levels(factor(fourth_day_pred_data_1$Label_4)))
+
+train_raw_data_3 <- fourth_day_pred_data_1[fourth_day_pred_data_1$Date < as.Date("2004-01-01"),]
+test_raw_data_3 <- fourth_day_pred_data_1[fourth_day_pred_data_1$Date >= as.Date("2004-01-01") & fourth_day_pred_data_1$Date <= as.Date("2005-12-31"),]
+train_raw_data_3 <- subset(train_raw_data_3, select = -c(Date))
+test_raw_data_3 <- subset(test_raw_data_3, select = -c(Date))
+```
+
+## caret package
+```{r}
+library(caret)
+
+log_control_3 <- trainControl(method = "cv", number = 3, returnResamp = "all",
+                       classProbs = TRUE, summaryFunction = twoClassSummary)
+# log_control <- trainControl(method='cv', number=3, returnResamp='none')
+log_model_3 <- train(Label_4 ~., data = train_raw_data_3, method='glmnet', trControl=log_control_3, metric = "ROC", tuneGrid = expand.grid(.alpha = seq(.05, 1, length = 15), .lambda = c((1:5)/10)), family="binomial")
+test_pred_3 <- predict(log_model_3, newdata = test_raw_data_3)
+
+confusionMatrix(test_pred_3, test_raw_data_3$Label_4)
+```

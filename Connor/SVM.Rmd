@@ -1,0 +1,278 @@
+---
+title: "SVM"
+output: html_notebook
+author: Connor Choi
+---
+
+# Using Kaggle dataset w/ score classfication
+
+## e1071 package
+```{r}
+require(xlsx)
+raw_data <- read.xlsx("Complete Data/kaggle_headlines_scored_classified.xlsx", sheetIndex = 1, stringsAsFactors = F)
+# date_col <- raw_data$Date
+# raw_data[] <- lapply(raw_data, function(x) ifelse(is.na(x), 0, x))
+raw_data$Date <- as.Date(raw_data$Date)
+raw_data$Label <- as.factor(raw_data$Label)
+
+train_raw_data <- raw_data[raw_data$Date < as.Date("2016-01-01"),]
+test_raw_data <- raw_data[raw_data$Date >= as.Date("2016-01-01"),]
+train_raw_data <- subset(train_raw_data, select = -c(Date))
+test_raw_data <- subset(test_raw_data, select = -c(Date))
+stopifnot((nrow(train_raw_data) + nrow(test_raw_data)) == nrow(raw_data))
+
+library(e1071)
+
+set.seed(2)
+tune_raw_data <- tune(svm ,Label ~ .,data = train_raw_data, kernel="radial", ranges = list(cost=10^(-1:2), gamma=c(.5,1,2)))
+summary(tune_raw_data)
+
+svm_raw_data <- svm(Label ~ ., data = train_raw_data, kernel="radial", cost = 0.1, gamma = 1, scale = FALSE)
+# summary(svm_raw_data)
+```
+
+### fitted vs. train
+```{r}
+library(caret)
+table(predict=svm_raw_data$fitted , truth=train_raw_data$Label)
+
+ypred <- predict(svm_raw_data , test_raw_data)
+# table(predict=ypred, truth=test_raw_data$Label)
+
+confusionMatrix(ypred, test_raw_data$Label)
+```
+
+## caret package
+```{r}
+library(caret)
+
+grid_radial <- expand.grid(sigma = c(0.01, 0.1, 1, 5, 10), C = c(0.01, 0.5, 1, 10, 100))
+
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+set.seed(3233)
+# names(getModelInfo())
+#"svmRadial"
+svm_Linear <- train(Label ~., data = train_raw_data, method = "svmRadial",
+                 trControl=trctrl,
+                 tuneGrid = grid_radial,
+                 preProcess = c("center", "scale"),
+                 tuneLength = 10)
+# svm_Linear
+
+# plot(svm_Linear)
+
+test_pred <- predict(svm_Linear, newdata = test_raw_data)
+# head(test_pred)
+
+confusionMatrix(test_pred, test_raw_data$Label)
+
+```
+
+## Backwards Selection
+```{r}
+set.seed(7)
+# load the library
+library(mlbench)
+library(caret)
+# define the control using a random forest selection function
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+# run the RFE algorithm
+results <- rfe(raw_data[,c(-6,-7)], raw_data[,7], sizes=c(1:8), rfeControl=control)
+# summarize the results
+# print(results)
+# list the chosen features
+predictors(results)
+# plot the results
+plot(results, type=c("g", "o"))
+```
+
+## Rank Features By Importance
+```{r}
+# ensure results are repeatable
+set.seed(7)
+# load the library
+library(mlbench)
+library(caret)
+# prepare training scheme
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+# train the model
+model <- train(Label~., data=raw_data[,-6], method="lvq", preProcess="scale", trControl=control)
+# estimate variable importance
+importance <- varImp(model, scale=FALSE)
+# summarize importance
+print(importance)
+# plot importance
+plot(importance)
+```
+
+
+# Using Kaggle dataset w/ 3rd day prediction
+```{r}
+fourth_day_pred_data <- cbind(raw_data[1:(nrow(raw_data)-3),-c(6,7)], raw_data[2:(nrow(raw_data)-2),-c(6,7)], raw_data[3:(nrow(raw_data)-1),-c(6,7)], raw_data[4:nrow(raw_data), c("Label", "Date")])
+for (i in 1:(length(colnames(fourth_day_pred_data))-2)) {
+        if (i <= 5) { colnames(fourth_day_pred_data)[i] <- paste0(colnames(fourth_day_pred_data)[i],"_",1)}
+        else if (i >= 6 & i < 11) { colnames(fourth_day_pred_data)[i] <- paste0(colnames(fourth_day_pred_data)[i],"_",2) }
+        else if (i >= 11) { colnames(fourth_day_pred_data)[i] <- paste0(colnames(fourth_day_pred_data)[i],"_",3) }
+}
+colnames(fourth_day_pred_data)[ncol(fourth_day_pred_data) - 1] <- "Label_4"
+fourth_day_pred_data$Date <- as.Date(fourth_day_pred_data$Date)
+
+train_raw_data_1 <- fourth_day_pred_data[fourth_day_pred_data$Date < as.Date("2016-01-01"),]
+test_raw_data_1 <- fourth_day_pred_data[fourth_day_pred_data$Date >= as.Date("2016-01-01"),]
+train_raw_data_1 <- subset(train_raw_data_1, select = -c(Date))
+test_raw_data_1 <- subset(test_raw_data_1, select = -c(Date))
+stopifnot((nrow(train_raw_data_1) + nrow(test_raw_data_1)) == nrow(fourth_day_pred_data))
+```
+
+## caret package
+```{r}
+library(caret)
+
+grid_radial_1 <- expand.grid(sigma = c(0.01, 0.1, 1, 5, 10), C = c(0.01, 0.5, 1, 10, 100))
+
+trctrl_1 <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+set.seed(2322)
+# names(getModelInfo())
+#"svmRadial"
+svm_Linear_1 <- train(Label_4 ~., data = train_raw_data_1, method = "svmRadial",
+                 trControl=trctrl_1,
+                 tuneGrid = grid_radial_1,
+                 preProcess = c("center", "scale"),
+                 tuneLength = 10)
+# svm_Linear_1
+
+# plot(svm_Linear_1)
+
+test_pred_1 <- predict(svm_Linear_1, newdata = test_raw_data_1)
+# head(test_pred_1)
+
+confusionMatrix(test_pred_1, test_raw_data_1$Label_4)
+```
+
+## Backwards Selection
+```{r}
+# names(fourth_day_pred_data)
+set.seed(7)
+# load the library
+library(mlbench)
+library(caret)
+# define the control using a random forest selection function
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+# run the RFE algorithm
+results <- rfe(fourth_day_pred_data[,c(-16,-17)], fourth_day_pred_data[,16], sizes=c(1:15), rfeControl=control)
+# summarize the results
+# print(results)
+# list the chosen features
+predictors(results)
+# plot the results
+plot(results, type=c("g", "o"))
+```
+
+# Using NYT dataset w/ score classfication
+```{r}
+raw_data_1 <- read.csv("Complete Data/classified_scores_&_stock_movement_1.csv", stringsAsFactors = F)
+raw_data_1$Date <- as.Date(raw_data_1$Date)
+raw_data_1$Direction <- as.factor(raw_data_1$Direction)
+raw_data_1 <- raw_data_1[complete.cases(raw_data_1),]
+stopifnot(sum(is.na(raw_data_1)) == 0)
+levels(raw_data_1$Direction) <- make.names(levels(factor(raw_data_1$Direction)))
+# levels(all.dat$target) <- make.names(levels(factor(all.dat$target)))
+
+train_raw_data_2 <- raw_data_1[raw_data_1$Date < as.Date("2004-01-01"),]
+test_raw_data_2 <- raw_data_1[raw_data_1$Date >= as.Date("2004-01-01") & raw_data_1$Date <= as.Date("2005-12-31"),]
+train_raw_data_2 <- subset(train_raw_data_2, select = -c(Date))
+test_raw_data_2 <- subset(test_raw_data_2, select = -c(Date))
+```
+
+## caret package
+```{r}
+library(caret)
+library(doMC)
+registerDoMC(cores=2)
+
+grid_radial_2 <- expand.grid(sigma = c(0.01, 0.1, 1, 5, 10), C = c(0.01, 0.5, 1, 10, 100))
+
+trctrl_2 <- trainControl(method = "repeatedcv", number = 10, repeats = 3,classProbs = T, allowParallel = T)
+
+set.seed(34321)
+# names(getModelInfo())
+#"svmRadial"
+svm_Linear_2 <- train(Direction ~., data = train_raw_data_2, method = "svmRadial",
+                 trControl=trctrl_2,
+                 tuneGrid = grid_radial_2,
+                 preProcess = c("center", "scale"),
+                 tuneLength = 10)
+# svm_Linear_2
+
+# plot(svm_Linear_2)
+
+test_pred_2 <- predict(svm_Linear_2, newdata = test_raw_data_2)
+# head(test_pred_2)
+
+confusionMatrix(test_pred_2, test_raw_data_2$Direction)
+```
+
+## ROC Curve
+```{r}
+# head(test_raw_data_2)
+library(ROCR)
+# prediction probabilities of test data classes
+probs <- predict.train(object = svm_Linear_2, newdata = test_raw_data_2[,-6], type='prob')[,1]
+isPositiveClass <- test_raw_data_2[,6] == 'X0' # for a ROC curve there is a positive class (true match rate...) - defining that class here
+pred <- prediction(probs, isPositiveClass)
+perf <- performance(pred, 'tpr', 'fpr')
+# plot: either
+plot(perf, lwd=2, col=3)
+# or
+# with(attributes(perf), plot(x=x.values[[1]], y=y.values[[1]], type='l')) 
+```
+
+
+# Using NYT dataset w/ 3rd day prediction
+```{r}
+# head(raw_data_1)
+# head(fourth_day_pred_data_1)
+
+fourth_day_pred_data_1 <- cbind(raw_data_1[1:(nrow(raw_data_1)-3),-c(6,7)], raw_data_1[2:(nrow(raw_data_1)-2),-c(6,7)], raw_data_1[3:(nrow(raw_data_1)-1),-c(6,7)], raw_data_1[4:nrow(raw_data_1), c("Direction", "Date")])
+for (i in 1:(length(colnames(fourth_day_pred_data_1))-2)) {
+        if (i <= 5) { colnames(fourth_day_pred_data_1)[i] <- paste0(colnames(fourth_day_pred_data_1)[i],"_",1)}
+        else if (i >= 6 & i < 11) { colnames(fourth_day_pred_data_1)[i] <- paste0(colnames(fourth_day_pred_data_1)[i],"_",2) }
+        else if (i >= 11) { colnames(fourth_day_pred_data_1)[i] <- paste0(colnames(fourth_day_pred_data_1)[i],"_",3) }
+}
+colnames(fourth_day_pred_data_1)[ncol(fourth_day_pred_data_1) - 1] <- "Label_4"
+fourth_day_pred_data_1$Date <- as.Date(fourth_day_pred_data_1$Date)
+
+train_raw_data_3 <- fourth_day_pred_data_1[fourth_day_pred_data_1$Date < as.Date("2004-01-01"),]
+test_raw_data_3 <- fourth_day_pred_data_1[fourth_day_pred_data_1$Date >= as.Date("2004-01-01") & fourth_day_pred_data_1$Date <= as.Date("2005-12-31"),]
+train_raw_data_3 <- subset(train_raw_data_3, select = -c(Date))
+test_raw_data_3 <- subset(test_raw_data_3, select = -c(Date))
+```
+
+## caret package
+```{r}
+library(caret)
+
+grid_radial_3 <- expand.grid(sigma = c(0.01, 0.1, 1, 5, 10), C = c(0.01, 0.5, 1, 10, 100))
+
+trctrl_3 <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+set.seed(343331)
+# names(getModelInfo())
+#"svmRadial"
+svm_Linear_3 <- train(Label_4 ~., data = train_raw_data_3, method = "svmRadial",
+                 trControl=trctrl_3,
+                 tuneGrid = grid_radial_3,
+                 preProcess = c("center", "scale"),
+                 tuneLength = 10)
+# svm_Linear_3
+
+# plot(svm_Linear_3)
+
+test_pred_3 <- predict(svm_Linear_3, newdata = test_raw_data_3)
+# head(test_pred_2)
+
+confusionMatrix(test_pred_3, test_raw_data_3$Label_4)
+```
+
