@@ -1,0 +1,29 @@
+---
+title: "Stock_Price_Headlines_Naive_Bayes"
+author: "Cristobal Sarome"
+date: "April 15, 2018"
+output: html_document
+---
+Reference:https://rpubs.com/cen0te/naivebayes-sentimentpolarity
+
+```{r}
+# Load required libraries
+library(tm)
+library(RTextTools)
+library(e1071)
+library(dplyr)
+library(caret)
+#library("xlsx")
+library(stringr)
+# Library for parallel processing
+# library(doMC)
+# registerDoMC(cores=detectCores())  # Use all available cores
+```
+
+```{r}
+#Loading data
+file.dir<-"../data/Complete Data/nyt_headlines_combined.csv"
+headlines.df<-read.csv(file.dir,stringsAsFactors = F)
+headlines.df[str_detect(headlines.df[[1]],"/"),]
+```
+
