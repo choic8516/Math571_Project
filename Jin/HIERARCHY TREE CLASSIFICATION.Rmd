@@ -5,21 +5,116 @@ date: "April 19, 2018"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, cache=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Kaggle data
-```{r setup, include=FALSE}
+### Load cleaned kaggle data
+```{r}
 library(xlsx)
 file <- file.path('../Connor/Complete Data/kaggle_headlines_scored_classified.xlsx')
 k_data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors = F)
+k_data$Date <- as.Date(k_data$Date)
+k_data$Label <- as.factor(k_data$Label)
 ```
 
+### Divide Train and Test
+Pick Jan 1, 2016 as the borderline of two sets.
+```{r}
+k_train <- k_data[k_data$Date < as.Date("2016-01-01"),]
+k_test <- k_data[k_data$Date >= as.Date("2016-01-01"),]
+stopifnot((nrow(k_train) + nrow(k_test)) == nrow(k_data))
+```
 
+### Hierarchy Tree Classificaition
+```{r}
+# library(caret)
+library(rpart)
+set.seed(999)
+# metric <- "Accuracy"
+# k_cart <- train(Label~., data = k_train, method = "rpart", metric = metric)
+targetVars <- c("Label")
+xVars <- c("Very.Negative", "Negative", "Neutral", "Postive", "Very.Positive")
+createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
+    if(includeIntercept){
+        modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ ')))
+    } else {
+        modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ '), -1))
+    }
+    return(modelForm)
+}
+modelForm <- createModelFormula(targetVars, xVars) 
+k_dt_less_leaf <- rpart(modelForm, data = k_train, method = "class")
+k_dt_more_leaf <- rpart(modelForm, data = k_train, control=rpart.control(minsplit=2, minbucket=1, cp=0.001))
+```
+
+### Plot and Evaluate
+```{r}
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+library(caret)
+# fancyRpartPlot(k_dt_less_leaf) # Doesn't work since there is only a root in the tree
+k_dt_less_leaf_pred <- predict(k_dt_less_leaf, k_test, type = "class")
+actual <- k_test$Label
+confusionMatrix(reference = actual, data = k_dt_less_leaf_pred)
+
+fancyRpartPlot(k_dt_more_leaf) 
+k_dt_more_leaf_pred <- predict(k_dt_more_leaf, k_test, type = "class")
+confusionMatrix(reference = actual, data = k_dt_more_leaf_pred)
+```
+The tree with a root has 55.56% accuracy and 0 Kappa. The tree with more leaves has the same accuracy and 0.08 Kappa.
 
 ## NYT data
 ```{r}
-file <- file.path('../Connor/Complete Data/nyt_headlines_combined_score_classfied.xls')
-nyt_data <- read.xlsx(file = file, sheetIndex = 1, stringsAsFactors = F)
+library(data.table)
+file <- file.path('../Connor/Complete Data/classified_scores_&_stock_movement_1.csv')
+nyt_data <- fread(file = file)
+nyt_data$Date <- as.Date(nyt_data$Date)
+nyt_data$Direction <- as.factor(nyt_data$Direction)
+# nyt_data_rm <- na.omit(nyt_data)
 ```
+
+### Divide Train and Test
+Pick Jan 1, 2014 as the borderline of two sets.
+```{r}
+nyt_train <- nyt_data[nyt_data$Date < as.Date("2014-01-01"),]
+nyt_test <- nyt_data[nyt_data$Date >= as.Date("2014-01-01"),]
+stopifnot((nrow(nyt_train) + nrow(nyt_test)) == nrow(nyt_data))
+```
+
+### Hierarchy Tree Classificaition
+```{r}
+library(rpart)
+set.seed(999)
+targetVars <- c("Direction")
+xVars <- c("Very.Negative", "Negative", "Neutral", "Postive", "Very.Positive")
+createModelFormula <- function(targetVar, xVars, includeIntercept = TRUE){
+    if(includeIntercept){
+        modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ ')))
+    } else {
+        modelForm <- as.formula(paste(targetVar, "~", paste(xVars, collapse = '+ '), -1))
+    }
+    return(modelForm)
+}
+modelForm <- createModelFormula(targetVars, xVars) 
+nyt_dt_less_leaf <- rpart(modelForm, data = nyt_train, method = "class")
+nyt_dt_more_leaf <- rpart(modelForm, data = nyt_train, control=rpart.control(minsplit=2, minbucket=1, cp=0.001))
+```
+
+### Plot and Evaluate
+```{r}
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+# fancyRpartPlot(nyt_dt_less_leaf) # Doesn't work since there is only a root in the tree
+nyt_dt_less_leaf_pred <- predict(nyt_dt_less_leaf, nyt_test, type = "class") 
+actual <- nyt_test$Direction
+confusionMatrix(reference = actual, data = nyt_dt_less_leaf_pred)
+
+fancyRpartPlot(nyt_dt_more_leaf) 
+nyt_dt_more_leaf_pred <- predict(nyt_dt_more_leaf, nyt_test, type = "class") 
+confusionMatrix(reference = actual, data = nyt_dt_more_leaf_pred)
+```
+The tree with one root has 52.78% accuracy and 0 Kappa. The tree with more leaves has 49.74% accuracy and -0.02 Kappa.

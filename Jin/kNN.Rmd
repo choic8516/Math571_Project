@@ -5,11 +5,12 @@ date: "April 19, 2018"
 output: html_document
 ---
 
-```{r setup, cache=TRUE, echo=FALSE}
+```{r setup, cache=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Kaggle data
+### Load cleaned kaggle data
 ```{r}
 library(xlsx)
 file <- file.path('../Connor/Complete Data/kaggle_headlines_scored_classified.xlsx')
@@ -51,10 +52,12 @@ opt_acc <- knn_function(opt_k)
 It shows that the optimal k-value can be picked from 14 to 18. The accuracy is around 56.3%.
 
 ## NYT data
-NA is removed for kNN model.
+### Load cleaned kaggle data
+NA is removed for kNN model. NA data shows up on weekends.
 ```{r}
+library(data.table)
 file <- file.path('../Connor/Complete Data/classified_scores_&_stock_movement_1.csv')
-nyt_data <- read.csv(file = file, stringsAsFactors = F)
+nyt_data <- as.data.frame(fread(file = file))
 nyt_data$Date <- as.Date(nyt_data$Date)
 nyt_data$Direction <- as.factor(nyt_data$Direction)
 nyt_data_rm <- na.omit(nyt_data)
