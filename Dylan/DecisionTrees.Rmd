@@ -1,0 +1,44 @@
+---
+title: "Decision Trees"
+author: "Dylan Arguelles"
+output: html_document
+---
+## Data Prep
+```{r}
+library(readxl)
+stock <- read_excel("~/Math571_Project/data/Complete Data/classified_scores_&_stock_movement.xlsx")
+stock$Date <- NULL # remove variable Date
+stock$StockMove <- as.factor(stock$StockMove)
+# random forest can't recognize variable names with spaces
+stock$vn <- stock$`Very Negative`
+stock$`Very Negative`<-NULL
+stock$vp <- stock$`Very Positive`
+stock$`Very Positive`<-NULL
+sox <- na.omit(stock) # remove days stock market is closed
+# to change number of days prior
+# separate stock movement and headline scores
+sc <- sox[,-4]
+move <- sox[,4]
+j <- c(0,0,0,0,0)
+```
+
+## Predicting using 2 days prior
+```{r}
+library(party)
+sc2 <- rbind(j,j,sc)
+move2 <- rbind(move,0,0)
+
+day2 <- cbind(sc2,move2)
+day2 <- day2[3:5047,]
+
+train2 <- day2[1:4036,]
+test2 <- day2[4037:5045,]
+
+d2tree <- ctree(StockMove ~ .,data = train2)
+
+d2predtree <- predict(d2tree, test2)
+
+cTab2  <- table(test2$StockMove,d2predtree, dnn=c("actual", "predicted")) #check accuracy
+d2TreeAccuracy <- (cTab2[1,1] + cTab2[2,2])/nrow(test2)
+d2TreeAccuracy
+```
