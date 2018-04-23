@@ -88,9 +88,12 @@ knn_function2 <- function(k_value){
         return(temp_knn_cm$overall[1])
 }
 
-opt_k <- which.max(lapply(seq(1,100), knn_function2))
+k_range <- seq(1,300)
+result_list <- lapply(k_range, knn_function2)
+plot(k_range, result_list, type = "l")
+opt_k <- which.max(result_list)
 opt_acc <- knn_function2(opt_k)
 ```
-The optimal k-value is 4, and it has 50.9% accuracy roughly. It's just slightly better than tosing a coin, so we should see if we can improve it.
+The plot shows that we have two possible optimal k-value range. First one is around 3 and second one is around 160. Both of them have about 51% accuracy roughly. It's just slightly better than tosing a coin.
 
 ### improve
