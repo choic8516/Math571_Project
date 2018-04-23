@@ -7,7 +7,6 @@ output: html_document
 References:
 https://rpubs.com/cen0te/naivebayes-sentimentpolarity
 http://kenbenoit.net/pdfs/text_analysis_in_R.pdf
-https://cran.r-project.org/web/packages/quanteda/quanteda.pdf
 
 
 
@@ -48,42 +47,51 @@ adapted.df<-adapted.df[!is.na(adapted.df[[2]]),]
 adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:77],1,paste, collapse=" "),stringsAsFactors=F)
 names(adapted.df)<-c("date","price_change","text")
 ```
+
 ```{r}
 #To process the text with the NLP tools from the package tm we have to create a corpus
-corpus <- tm::Corpus(VectorSource(adapted.df$text))
+corpus <- Corpus(VectorSource(adapted.df$text))
 corpus.clean <- corpus %>%
   tm_map(content_transformer(tolower)) %>% 
   tm_map(removePunctuation) %>%
   tm_map(removeNumbers) %>%
-  tm_map(removeWords, tm::stopwords(kind="en")) %>%
+  tm_map(removeWords, stopwords(kind="en")) %>%
   tm_map(stripWhitespace)
 as.character(corpus.clean[[1]])
+
+corpus.headlines<-corpus(corpus.clean)
+
+#Now we create the Document Term Matrix to use for Naive Bayes
+headlines.dtm <- DocumentTermMatrix(corpus.clean)
+headlines.dtm
+#we are interested in the words that appear at least 5 times in the corpus
+headlines.freq.words <- findFreqTerms(headlines.dtm, 5)
+headlines.dtm[, headlines.freq.words]
+#we divide the DTM and the labels vector in train and test set
+dtm.train<-headlines.dtm[1:300,]
+dtm.test<-headlines.dtm[301:400,]
+labels.train<-adapted.df[1:300,2]
+labels.test<-adapted.df[301:400,2]
+#For this implementation of the Naive Bayes algorithm we need
+#to convert the frequency matrix in a yes/no matrix. Where yes
+#means that the word is present in that document and no that it's not.
+# dummy<-tidy(headlines.dtm[1:5,1:5])
+# dtm.matrix.train<-as.matrix.csr(dtm.train)
+# dtm.matrix.test<-as.matrix.csr(dtm.test)
+convert_counts <- function(x) {
+x <- ifelse(x > 0, "Yes", "No")
+}
+
+# MARGIN = 1 is used for rows and 2 for columns
+headlines.train <- apply(dtm.train, MARGIN = 2, convert_counts)
+headlines.test <- apply(dtm.test, MARGIN = 2, convert_counts)
 ```
 
 ```{r}
-
-#We divide the data in test and train set
-train.index<-c(1:6000)
-test.index<-c(6001:6500)
-all.index<-c(train.index,test.index)
-# train.corpus<-corpus.clean[train.index]
-# test.corpus<-corpus.clean[test.index]
-labels.train<-adapted.df[train.index,2]
-labels.test<-adapted.df[test.index,2]
-#convert
-headlines.corpus<-quanteda::corpus(corpus.clean[all.index])
-#test.headlines<-quanteda::corpus(test.corpus)
-#dtm
-headlines.dfm<-dfm(headlines.corpus)
-#subset or sample?
-train.dfm<-dfm_subset(headlines.dfm,train.index)
-test.dfm<-dfm_subset(headlines.dfm,test.index)
-#test.dfm<-dfm(test.headlines)
-#NB
-nb.model<-textmodel_nb(train.dfm,labels.train)
-predict.prices<-predict(nb.model,newdata = test.dfm)
-class.predicted<-predict.prices$nb.predicted
-confusionMatrix(data = class.predicted,reference = labels.test)
+healines.classifier <- naiveBayes(headlines.train,labels.train)
+headlines.predict<-predict(healines.classifier,headlines.test)
 ```
-
+```{r}
+dfm(corpus.headlines)
+```
 
