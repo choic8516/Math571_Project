@@ -1,0 +1,91 @@
+---
+title: "Random Forest"
+author: "Dylan Arguelles"
+output: html_document
+---
+
+## Data Prep
+```{r}
+library(readxl)
+stock <- read_excel("~/Math571_Project/data/Complete Data/classified_scores_&_stock_movement.xlsx")
+stock$Date <- NULL # remove variable Date
+stock$StockMove <- as.factor(stock$StockMove)
+# random forest can't recognize variable names with spaces
+stock$vn <- stock$`Very Negative`
+stock$`Very Negative`<-NULL
+stock$vp <- stock$`Very Positive`
+stock$`Very Positive`<-NULL
+sox <- na.omit(stock) # remove days stock market is closed
+# to change number of days prior
+# separate stock movement and headline scores
+sc <- sox[,-4]
+move <- sox[,4]
+j <- c(0,0,0,0,0)
+```
+
+
+## Predicting using 1 day prior
+```{r}
+library(randomForest)
+set.seed(808)
+sc1 <- rbind(j,sc)
+move1 <- rbind(move,0)
+
+day1 <- cbind(sc1,move1)
+#delete the temp added days
+day1 <- day1[2:5047,]
+
+train1 <- day1[1:4037,]
+test1 <- day1[4038:5046,]
+
+rf1 <- randomForest(StockMove ~ ., data = train1)
+
+pred1 <- predict(rf1, test1) # validate on test dataset
+
+cTab1  <- table(test1$StockMove,pred1, dnn=c("actual", "predicted")) #check accuracy
+d1Accuracy <- (cTab1[1,1] + cTab1[2,2])/nrow(test1)
+d1Accuracy
+```
+
+## Predicting using 2 days prior
+
+```{r}
+sc2 <- rbind(j,j,sc)
+move2 <- rbind(move,0,0)
+
+day2 <- cbind(sc2,move2)
+day2 <- day2[3:5047,]
+
+train2 <- day2[1:4036,]
+test2 <- day2[4037:5045,]
+
+rf2 <- randomForest(StockMove ~ ., data = train2)
+
+pred2 <- predict(rf2, test2) # validate on test dataset
+
+cTab2  <- table(test2$StockMove,pred2, dnn=c("actual", "predicted")) #check accuracy
+d2Accuracy <- (cTab2[1,1] + cTab2[2,2])/nrow(test2)
+d2Accuracy
+```
+
+## Predicting using 3 days prior
+
+```{r}
+sc3 <- rbind(j,j,j,sc)
+move3 <- rbind(move,0,0,0)
+
+day3 <- cbind(sc3,move3)
+#delete the temp added days
+day3 <- day3[4:5047,]
+
+train3 <- day3[1:4036,]
+test3 <- day3[4037:5044,]
+
+rf3 <- randomForest(StockMove ~ ., data = train3)
+
+pred3 <- predict(rf3, test3) # validate on test dataset
+
+cTab3  <- table(test3$StockMove,pred3, dnn=c("actual", "predicted")) #check accuracy
+d3Accuracy <- (cTab3[1,1] + cTab3[2,2])/nrow(test3)
+d3Accuracy
+```
