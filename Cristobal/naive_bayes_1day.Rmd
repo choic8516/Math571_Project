@@ -41,11 +41,10 @@ combined.df<-merge(headlines.df,stocks.df,by="date",all.x = TRUE)
 sapply(combined.df,function(x) sum(is.na(x)))
 combined.df<-combined.df[-c(2,28:33)]
 Nrows<-dim(combined.df)[1]
-adapted.df<-cbind(combined.df[4:Nrows,c(1,27)],combined.df[1:(Nrows-3),2:26],
-                  combined.df[2:(Nrows-2),2:26],combined.df[3:(Nrows-1),2:26])
+adapted.df<-cbind(combined.df[2:Nrows,c(1,27)],combined.df[1:(Nrows-1),2:26])
 adapted.df<-adapted.df[!is.na(adapted.df[[2]]),]
 #In order to process the headlines with the Naive Bayes Classifier, we combine all the headlines from 3 days previous to the prediction in a single doccument
-adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:77],1,paste, collapse=" "),stringsAsFactors=F)
+adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:27],1,paste, collapse=" "),stringsAsFactors=F)
 names(adapted.df)<-c("date","price_change","text")
 ```
 ```{r}
@@ -63,8 +62,8 @@ as.character(corpus.clean[[1]])
 ```{r}
 
 #We divide the data in test and train set
-train.index<-c(1:4000)
-test.index<-c(4001:5000)
+train.index<-c(1:4500)
+test.index<-c(4501:5000)
 all.index<-c(train.index,test.index)
 # train.corpus<-corpus.clean[train.index]
 # test.corpus<-corpus.clean[test.index]

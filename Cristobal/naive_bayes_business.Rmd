@@ -30,22 +30,28 @@ options(max.print=100)
 
 ```{r}
 #Loading data
-headlines.dir<-"../data/Complete Data/nyt_headlines_combined_clean.csv"
-headlines.df<-read.csv(headlines.dir,stringsAsFactors = F)
-headlines.df[str_detect(headlines.df[[1]],"/"),]
+headlines.dir<-"../data/raw_data/nyt_headlines_"
+headlines.df<-data.frame()
+for(year in c(1989:2017)){
+  headlines.file<-paste0(headlines.dir,year,".csv")
+  headlines.df<-rbind(headlines.df,read.csv(headlines.file,stringsAsFactors = F))
+}
+headlines.df$date<-substr(headlines.df$pub_date,1,10)
+headlines.df<-as.data.frame(tapply(headlines.df[[2]],headlines.df$date,paste,collapse=" "))
+headlines.df$date<-row.names(headlines.df)
 stocks.dir<-"../data/Complete Data/FullDJIA.xlsx"
 stocks.df<-read.xlsx(stocks.dir,1)
-names(headlines.df)[2]<-"date"
+names(headlines.df)[1]<-"text"
 names(stocks.df)[1]<-"date"
+
 combined.df<-merge(headlines.df,stocks.df,by="date",all.x = TRUE)
 sapply(combined.df,function(x) sum(is.na(x)))
-combined.df<-combined.df[-c(2,28:33)]
 Nrows<-dim(combined.df)[1]
-adapted.df<-cbind(combined.df[4:Nrows,c(1,27)],combined.df[1:(Nrows-3),2:26],
-                  combined.df[2:(Nrows-2),2:26],combined.df[3:(Nrows-1),2:26])
+adapted.df<-cbind(combined.df[4:Nrows,c(1,9)],combined.df[1:(Nrows-3),2],
+                  combined.df[2:(Nrows-2),2],combined.df[3:(Nrows-1),2])
 adapted.df<-adapted.df[!is.na(adapted.df[[2]]),]
 #In order to process the headlines with the Naive Bayes Classifier, we combine all the headlines from 3 days previous to the prediction in a single doccument
-adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:77],1,paste, collapse=" "),stringsAsFactors=F)
+adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:5],1,paste, collapse=" "),stringsAsFactors=F)
 names(adapted.df)<-c("date","price_change","text")
 ```
 ```{r}
@@ -63,8 +69,8 @@ as.character(corpus.clean[[1]])
 ```{r}
 
 #We divide the data in test and train set
-train.index<-c(1:4000)
-test.index<-c(4001:5000)
+train.index<-c(1:6000)
+test.index<-c(6001:7000)
 all.index<-c(train.index,test.index)
 # train.corpus<-corpus.clean[train.index]
 # test.corpus<-corpus.clean[test.index]
@@ -75,6 +81,7 @@ headlines.corpus<-quanteda::corpus(corpus.clean[all.index])
 #test.headlines<-quanteda::corpus(test.corpus)
 #dtm
 headlines.dfm<-dfm(headlines.corpus)
+headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 10,max_termfreq = 200)
 #subset or sample?
 train.dfm<-dfm_subset(headlines.dfm,train.index)
 test.dfm<-dfm_subset(headlines.dfm,test.index)
