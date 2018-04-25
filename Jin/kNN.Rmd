@@ -22,6 +22,7 @@ k_data$Label <- as.factor(k_data$Label)
 ### Divide Train and Test
 Pick Jan 1, 2016 as the borderline of two sets.
 ```{r}
+set.seed(999)
 k_train <- k_data[k_data$Date < as.Date("2016-01-01"),]
 k_test <- k_data[k_data$Date >= as.Date("2016-01-01"),]
 stopifnot((nrow(k_train) + nrow(k_test)) == nrow(k_data))
@@ -32,7 +33,6 @@ Remove target varibale and date from train set
 ```{r}
 library(class)
 library(caret)
-set.seed(999)
 targetVars <- c("Label")
 xVars <- c("Very.Negative", "Negative", "Neutral", "Postive", "Very.Positive")
 k_train_label <- k_train[, targetVars]
@@ -45,11 +45,13 @@ knn_function <- function(k_value){
         temp_knn_cm <- confusionMatrix(reference = k_test_label, data = temp_knn)
         return(temp_knn_cm$overall[1])
 }
-
-opt_k <- which.max(lapply(seq(1,100), knn_function))
+k_range <- seq(1,300)
+result_list <- lapply(k_range, knn_function)
+plot(k_range, result_list, type = "l")
+opt_k <- which.max(result_list)
 opt_acc <- knn_function(opt_k)
 ```
-It shows that the optimal k-value can be picked from 14 to 18. The accuracy is around 56.3%.
+It looks like there are two picking areas, around 14 and around 36. They have close accuracy which are about 59%.
 
 ## NYT data
 ### Load cleaned kaggle data
@@ -88,9 +90,12 @@ knn_function2 <- function(k_value){
         return(temp_knn_cm$overall[1])
 }
 
-opt_k <- which.max(lapply(seq(1,100), knn_function2))
+k_range <- seq(1,300)
+result_list <- lapply(k_range, knn_function2)
+plot(k_range, result_list, type = "l")
+opt_k <- which.max(result_list)
 opt_acc <- knn_function2(opt_k)
 ```
-The optimal k-value is 4, and it has 50.9% accuracy roughly. It's just slightly better than tosing a coin, so we should see if we can improve it.
+The plot shows that we have two possible optimal k-value range. First one is around 3 and second one is around 160. Both of them have about 51% accuracy roughly. It's just slightly better than tosing a coin.
 
 ### improve
