@@ -47,7 +47,7 @@ names(stocks.df)[1]<-"date"
 combined.df<-merge(headlines.df,stocks.df,by="date",all.x = TRUE)
 sapply(combined.df,function(x) sum(is.na(x)))
 Nrows<-dim(combined.df)[1]
-adapted.df<-cbind(combined.df[2:Nrows,c(1,9)],combined.df[1:(Nrows-1),2])
+adapted.df<-cbind(combined.df[1:Nrows,c(1,9)],combined.df[1:Nrows,2])
 adapted.df<-adapted.df[!is.na(adapted.df[[2]]),]
 #In order to process the headlines with the Naive Bayes Classifier, we combine all the headlines from 3 days previous to the prediction in a single doccument
 #adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:5],1,paste, collapse=" "),stringsAsFactors=F)
@@ -68,8 +68,8 @@ as.character(corpus.clean[[1]])
 ```{r}
 
 #We divide the data in test and train set
-train.index<-c(1:6000)
-test.index<-c(6001:7000)
+train.index<-c(1:6500)
+test.index<-c(6501:7056)
 all.index<-c(train.index,test.index)
 # train.corpus<-corpus.clean[train.index]
 # test.corpus<-corpus.clean[test.index]
@@ -80,16 +80,17 @@ headlines.corpus<-quanteda::corpus(corpus.clean[all.index])
 #test.headlines<-quanteda::corpus(test.corpus)
 #dtm
 headlines.dfm<-dfm(headlines.corpus)
-headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 10,max_termfreq = 200)
+headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 5,max_termfreq = 200)
 #subset or sample?
 train.dfm<-dfm_subset(headlines.dfm,train.index)
 test.dfm<-dfm_subset(headlines.dfm,test.index)
 #test.dfm<-dfm(test.headlines)
 #NB
-nb.model<-textmodel_nb(train.dfm,labels.train,smooth = 20)
+nb.model<-textmodel_nb(train.dfm,labels.train,smooth = 5)
 predict.prices<-predict(nb.model,newdata = test.dfm)
 class.predicted<-predict.prices$posterior.prob
 class.predicted<-ifelse(predict.prices$posterior.prob[,2]>0.95,1,0)
+#class.predicted<-predict.prices$nb.predicted
 confusionMatrix(data = class.predicted,reference = labels.test)
 ```
 
