@@ -1,0 +1,90 @@
+---
+title: "Stock_Price_Headlines_Naive_Bayes"
+author: "Cristobal Sarome"
+date: "April 15, 2018"
+output: html_document
+---
+References:
+https://rpubs.com/cen0te/naivebayes-sentimentpolarity
+http://kenbenoit.net/pdfs/text_analysis_in_R.pdf
+https://cran.r-project.org/web/packages/quanteda/quanteda.pdf
+
+
+
+```{r}
+# Load required libraries
+library(tm)
+library(RTextTools)
+library(e1071)
+library(dplyr)
+library(caret)
+library("xlsx")
+library(stringr)
+library(tidytext)
+library(quanteda)
+# Library for parallel processing
+# library(doMC)
+# registerDoMC(cores=detectCores())  # Use all available cores
+options(max.print=100)
+```
+
+```{r}
+#Loading data
+headlines.dir<-"../data/Complete Data/Combined_News_DJIA.csv"
+headlines.df<-read.csv(headlines.dir,stringsAsFactors = F)
+#headlines.df[str_detect(headlines.df[[1]],"/"),]
+# stocks.dir<-"../data/Complete Data/FullDJIA.xlsx"
+# stocks.df<-read.xlsx(stocks.dir,1)
+# names(headlines.df)[2]<-"date"
+# names(stocks.df)[1]<-"date"
+# combined.df<-merge(headlines.df,stocks.df,by="date",all.x = TRUE)
+sapply(headlines.df,function(x) sum(is.na(x)))
+# combined.df<-combined.df[-c(2,28:33)]
+Nrows<-dim(headlines.df)[1]
+headlines.df[3:27]<-as.data.frame(sapply(headlines.df[3:27],FUN=str_remove,"b"),stringsAsFactors = F)
+adapted.df<-cbind(headlines.df[2:Nrows,c(1,2)],headlines.df[1:(Nrows-1),3:27])
+adapted.df<-adapted.df[!is.na(adapted.df[[2]]),]
+#In order to process the headlines with the Naive Bayes Classifier, we combine all the headlines from 3 days previous to the prediction in a single doccument
+adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:27],1,paste, collapse=" "),stringsAsFactors=F)
+names(adapted.df)<-c("date","price_change","text")
+```
+```{r}
+#To process the text with the NLP tools from the package tm we have to create a corpus
+corpus <- tm::Corpus(VectorSource(adapted.df$text))
+corpus.clean <- corpus %>%
+  tm_map(content_transformer(tolower)) %>% 
+  tm_map(removePunctuation) %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removeWords, tm::stopwords(kind="en")) %>%
+  tm_map(stripWhitespace)
+as.character(corpus.clean[[1988]])
+```
+
+```{r}
+
+#We divide the data in test and train set
+train.index<-c(1:1600)
+test.index<-c(1601:1988)
+all.index<-c(train.index,test.index)
+# train.corpus<-corpus.clean[train.index]
+# test.corpus<-corpus.clean[test.index]
+labels.train<-adapted.df[train.index,2]
+labels.test<-adapted.df[test.index,2]
+#convert
+headlines.corpus<-quanteda::corpus(corpus.clean[all.index])
+#test.headlines<-quanteda::corpus(test.corpus)
+#dtm
+headlines.dfm<-dfm(headlines.corpus)
+headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 5,max_termfreq = 300)
+#divide in test and train data
+train.dfm<-dfm_subset(headlines.dfm,train.index)
+test.dfm<-dfm_subset(headlines.dfm,test.index)
+#test.dfm<-dfm(test.headlines)
+#NB
+nb.model<-textmodel_nb(train.dfm,labels.train,smooth = 2)
+predict.prices<-predict(nb.model,newdata = test.dfm)
+class.predicted<-predict.prices$nb.predicted
+confusionMatrix(data = class.predicted,reference = labels.test)
+```
+
+

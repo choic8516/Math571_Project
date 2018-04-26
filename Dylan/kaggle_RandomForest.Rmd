@@ -1,0 +1,89 @@
+---
+title: "kaggle_RandomForest"
+author: "Dylan Arguelles"
+output: html_document
+---
+
+## Data Prep
+```{r}
+library(readxl)
+kaggle <- read_excel("~/Math571_Project/data/Complete Data/kaggle_headlines_scored_classified.xlsx")
+kaggle$Date <- NULL # remove variable Date
+kaggle$Label <- as.factor(kaggle$Label)
+# random forest can't recognize variable names with spaces
+kaggle$vn <- kaggle$`Very Negative`
+kaggle$`Very Negative`<-NULL
+kaggle$vp <- kaggle$`Very Positive`
+kaggle$`Very Positive`<-NULL
+kag <- na.omit(kaggle) # remove days stock market is closed
+# to change number of days prior
+# separate stock movement and headline scores
+kc <- kag[,-4]
+kmove <- kag[,4]
+j <- c(0,0,0,0,0)
+```
+
+## Predict with 1 day prior
+
+```{r}
+library(randomForest)
+set.seed(312)
+kc1 <- rbind(j,kc)
+kmove1 <- rbind(kmove,0)
+
+kagday1 <- cbind(kc1,kmove1)
+kagday1 <- kagday1[2:1989,]
+
+kagtrain1 <- kagday1[1:1589,]
+kagtest1 <- kagday1[1590:1988,]
+
+kagrf1 <- randomForest(Label ~ ., data = kagtrain1)
+
+kagpred1 <- predict(kagrf1, kagtest1) # validate on test dataset
+
+kagcTab1  <- table(kagtest1$Label,kagpred1, dnn=c("actual", "predicted")) #check accuracy
+kagd1Accuracy <- (kagcTab1[1,1] + kagcTab1[2,2])/nrow(kagtest1)
+kagd1Accuracy
+```
+
+## Predict with 2 days prior
+
+```{r}
+kc2 <- rbind(j,j,kc)
+kmove2 <- rbind(kmove,0,0)
+
+kagday2 <- cbind(kc2,kmove2)
+kagday2 <- kagday2[3:1989,]
+
+kagtrain2 <- kagday2[1:1589,]
+kagtest2 <- kagday2[1590:1987,]
+
+kagrf2 <- randomForest(Label ~ ., data = kagtrain2)
+
+kagpred2 <- predict(kagrf2, kagtest2) # validate on test dataset
+
+kagcTab2  <- table(kagtest2$Label,kagpred2, dnn=c("actual", "predicted")) #check accuracy
+kagd2Accuracy <- (kagcTab2[1,1] + kagcTab2[2,2])/nrow(kagtest2)
+kagd2Accuracy
+```
+
+## Predict with 3 days prior
+
+```{r}
+kc3 <- rbind(j,j,j,kc)
+kmove3 <- rbind(kmove,0,0,0)
+
+kagday3 <- cbind(kc3,kmove3)
+kagday3 <- kagday3[4:1989,]
+
+kagtrain3 <- kagday3[1:1589,]
+kagtest3 <- kagday3[1590:1986,]
+
+kagrf3 <- randomForest(Label ~ ., data = kagtrain3)
+
+kagpred3 <- predict(kagrf3, kagtest3) # validate on test dataset
+
+kagcTab3  <- table(kagtest3$Label,kagpred3, dnn=c("actual", "predicted")) #check accuracy
+kagd3Accuracy <- (kagcTab3[1,1] + kagcTab3[2,2])/nrow(kagtest3)
+kagd3Accuracy
+```
