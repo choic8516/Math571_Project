@@ -30,19 +30,20 @@ options(max.print=100)
 
 ```{r}
 #Loading data
-headlines.dir<-"../data/Complete Data/nyt_headlines_combined_clean.csv"
+headlines.dir<-"../data/Complete Data/Combined_News_DJIA.csv"
 headlines.df<-read.csv(headlines.dir,stringsAsFactors = F)
-headlines.df[str_detect(headlines.df[[1]],"/"),]
-stocks.dir<-"../data/Complete Data/FullDJIA.xlsx"
-stocks.df<-read.xlsx(stocks.dir,1)
-names(headlines.df)[2]<-"date"
-names(stocks.df)[1]<-"date"
-combined.df<-merge(headlines.df,stocks.df,by="date",all.x = TRUE)
-sapply(combined.df,function(x) sum(is.na(x)))
-combined.df<-combined.df[-c(2,28:33)]
-Nrows<-dim(combined.df)[1]
-adapted.df<-cbind(combined.df[4:Nrows,c(1,27)],combined.df[1:(Nrows-3),2:26],
-                  combined.df[2:(Nrows-2),2:26],combined.df[3:(Nrows-1),2:26])
+#headlines.df[str_detect(headlines.df[[1]],"/"),]
+# stocks.dir<-"../data/Complete Data/FullDJIA.xlsx"
+# stocks.df<-read.xlsx(stocks.dir,1)
+# names(headlines.df)[2]<-"date"
+# names(stocks.df)[1]<-"date"
+# combined.df<-merge(headlines.df,stocks.df,by="date",all.x = TRUE)
+sapply(headlines.df,function(x) sum(is.na(x)))
+# combined.df<-combined.df[-c(2,28:33)]
+Nrows<-dim(headlines.df)[1]
+headlines.df[3:27]<-as.data.frame(sapply(headlines.df[3:27],FUN=str_remove,"b"),stringsAsFactors = F)
+adapted.df<-cbind(headlines.df[3:Nrows,c(1,2)],headlines.df[1:(Nrows-2),3:27],
+                  headlines.df[2:(Nrows-1),3:27],headlines.df[3:(Nrows),3:27])
 adapted.df<-adapted.df[!is.na(adapted.df[[2]]),]
 #In order to process the headlines with the Naive Bayes Classifier, we combine all the headlines from 3 days previous to the prediction in a single doccument
 adapted.df<-cbind(adapted.df[1:2], apply(adapted.df[,3:77],1,paste, collapse=" "),stringsAsFactors=F)
@@ -63,8 +64,8 @@ as.character(corpus.clean[[1]])
 ```{r}
 
 #We divide the data in test and train set
-train.index<-c(1:6200)
-test.index<-c(6201:6533)
+train.index<-c(1:1500)
+test.index<-c(1501:1988)
 all.index<-c(train.index,test.index)
 # train.corpus<-corpus.clean[train.index]
 # test.corpus<-corpus.clean[test.index]
@@ -75,13 +76,13 @@ headlines.corpus<-quanteda::corpus(corpus.clean[all.index])
 #test.headlines<-quanteda::corpus(test.corpus)
 #dtm
 headlines.dfm<-dfm(headlines.corpus)
-headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 10,max_termfreq = 200)
+headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 5,max_termfreq = 300)
 #divide in test and train data
 train.dfm<-dfm_subset(headlines.dfm,train.index)
 test.dfm<-dfm_subset(headlines.dfm,test.index)
 #test.dfm<-dfm(test.headlines)
 #NB
-nb.model<-textmodel_nb(train.dfm,labels.train,smooth = 5)
+nb.model<-textmodel_nb(train.dfm,labels.train,smooth = 2)
 predict.prices<-predict(nb.model,newdata = test.dfm)
 class.predicted<-predict.prices$nb.predicted
 confusionMatrix(data = class.predicted,reference = labels.test)

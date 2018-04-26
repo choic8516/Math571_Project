@@ -63,8 +63,8 @@ as.character(corpus.clean[[1]])
 ```{r}
 
 #We divide the data in test and train set
-train.index<-c(1:6200)
-test.index<-c(6201:6533)
+train.index<-c(1:5500)
+test.index<-c(5501:6533)
 all.index<-c(train.index,test.index)
 # train.corpus<-corpus.clean[train.index]
 # test.corpus<-corpus.clean[test.index]
@@ -75,7 +75,7 @@ headlines.corpus<-quanteda::corpus(corpus.clean[all.index])
 #test.headlines<-quanteda::corpus(test.corpus)
 #dtm
 headlines.dfm<-dfm(headlines.corpus)
-headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 10,max_termfreq = 200)
+headlines.dfm<-dfm_trim(headlines.dfm,min_termfreq = 5,max_termfreq = 200)
 #divide in test and train data
 train.dfm<-dfm_subset(headlines.dfm,train.index)
 test.dfm<-dfm_subset(headlines.dfm,test.index)
