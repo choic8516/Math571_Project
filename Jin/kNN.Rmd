@@ -22,7 +22,7 @@ k_data$Label <- as.factor(k_data$Label)
 ### Divide Train and Test
 Pick Jan 1, 2016 as the borderline of two sets.
 ```{r}
-set.seed(999)
+set.seed(18)
 k_train <- k_data[k_data$Date < as.Date("2016-01-01"),]
 k_test <- k_data[k_data$Date >= as.Date("2016-01-01"),]
 stopifnot((nrow(k_train) + nrow(k_test)) == nrow(k_data))
