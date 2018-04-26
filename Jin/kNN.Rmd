@@ -52,7 +52,33 @@ plot(k_range, result_list, type = "l")
 opt_k <- which.max(result_list)
 opt_acc <- knn_function(opt_k)
 ```
-It looks like there are two picking areas, around 14 and around 36. They have close accuracy which are about `r round(opt_acc, digits = 4)*100`%.
+It looks we more than one picking areas for k. The optimal k-value is `r opt_k`, at that point we have accuracy about `r round(opt_acc, digits = 4)*100`%.
+
+### 3rd Day Prediction w/ kaggle
+```{r}
+k_3rd_train_xVars <- cbind(k_train[1:(nrow(k_train)-2), xVars],
+                           k_train[2:(nrow(k_train)-1), xVars],
+                           k_train[3:nrow(k_train), xVars])
+k_3rd_train_label <- k_train[3:nrow(k_train), targetVars]
+
+k_3rd_test_xVars <- cbind(k_test[1:(nrow(k_test)-2), xVars],
+                           k_test[2:(nrow(k_test)-1), xVars],
+                           k_test[3:nrow(k_test), xVars])
+k_3rd_test_label <- k_test[3:nrow(k_test), targetVars]
+
+knn_function_3rd <- function(k_value){
+        temp_knn <- knn(train = k_3rd_train_xVars, test = k_3rd_test_xVars, cl = k_3rd_train_label, k = k_value)
+        temp_knn_cm <- confusionMatrix(reference = k_3rd_test_label, data = temp_knn)
+        return(temp_knn_cm$overall[1])
+}
+
+# k_range <- seq(1,300)
+result_list <- lapply(k_range, knn_function_3rd)
+plot(k_range, result_list, type = "l")
+opt_k <- which.max(result_list)
+opt_acc <- knn_function(opt_k)
+```
+The optimal k-value is `r opt_k`, at that point we have accuracy about `r round(opt_acc, digits = 4)*100`%.
 
 ## NYT data
 ### Load cleaned kaggle data
@@ -79,7 +105,7 @@ stopifnot((nrow(nyt_train) + nrow(nyt_test)) == nrow(nyt_data_rm))
 library(class)
 library(caret)
 targetVars <- c("Direction")
-xVars <- c("Very.Negative", "Negative", "Neutral", "Postive", "Very.Positive")
+# xVars <- c("Very.Negative", "Negative", "Neutral", "Postive", "Very.Positive")
 nyt_train_label <- nyt_train[, targetVars]
 nyt_test_label <- nyt_test[, targetVars]
 nyt_train_xVars <- nyt_train[, xVars]
@@ -97,4 +123,30 @@ plot(k_range, result_list, type = "l")
 opt_k <- which.max(result_list)
 opt_acc <- knn_function2(opt_k)
 ```
-The plot shows that we have two possible optimal k-value range. First one is around 3 and second one is around 160. Both of them have about `r round(opt_acc, digits = 4)*100`% accuracy roughly. It's just slightly better than tosing a coin.
+The optimal k-value is `r opt_k`, at that point we have accuracy about `r round(opt_acc, digits = 4)*100`%.
+
+### 3rd Day Prediction w/ NYT
+```{r}
+nyt_3rd_train_xVars <- cbind(nyt_train[1:(nrow(nyt_train)-2), xVars],
+                           nyt_train[2:(nrow(nyt_train)-1), xVars],
+                           nyt_train[3:nrow(nyt_train), xVars])
+nyt_3rd_train_label <- nyt_train[3:nrow(nyt_train), targetVars]
+
+nyt_3rd_test_xVars <- cbind(nyt_test[1:(nrow(nyt_test)-2), xVars],
+                           nyt_test[2:(nrow(nyt_test)-1), xVars],
+                           nyt_test[3:nrow(nyt_test), xVars])
+nyt_3rd_test_label <- nyt_test[3:nrow(nyt_test), targetVars]
+
+knn_function2_3rd <- function(k_value){
+        temp_knn <- knn(train = nyt_3rd_train_xVars, test = nyt_3rd_test_xVars, cl = nyt_3rd_train_label, k = k_value)
+        temp_knn_cm <- confusionMatrix(reference = nyt_3rd_test_label, data = temp_knn)
+        return(temp_knn_cm$overall[1])
+}
+
+# k_range <- seq(1,300)
+result_list <- lapply(k_range, knn_function2_3rd)
+plot(k_range, result_list, type = "l")
+opt_k <- which.max(result_list)
+opt_acc <- knn_function(opt_k)
+```
+The optimal k-value is `r opt_k`, at that point we have accuracy about `r round(opt_acc, digits = 4)*100`%.
