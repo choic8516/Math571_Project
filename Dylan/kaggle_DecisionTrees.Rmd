@@ -1,0 +1,47 @@
+---
+title: "kaggle_DecisionTrees"
+author: "Dylan Arguelles"
+output: html_document
+---
+
+## Data Prep
+```{r}
+library(readxl)
+kaggle <- read_excel("~/Math571_Project/data/Complete Data/kaggle_headlines_scored_classified.xlsx")
+kaggle$Date <- NULL # remove variable Date
+kaggle$Label <- as.factor(kaggle$Label)
+# random forest can't recognize variable names with spaces
+kaggle$vn <- kaggle$`Very Negative`
+kaggle$`Very Negative`<-NULL
+kaggle$vp <- kaggle$`Very Positive`
+kaggle$`Very Positive`<-NULL
+kag <- na.omit(kaggle) # remove days stock market is closed
+# to change number of days prior
+# separate stock movement and headline scores
+kc <- kag[,-4]
+kmove <- kag[,4]
+j <- c(0,0,0,0,0)
+```
+
+## Predict with 2 days prior
+
+```{r}
+library(party)
+set.seed(847)
+kc2 <- rbind(j,j,kc)
+kmove2 <- rbind(kmove,0,0)
+
+kagday2 <- cbind(kc2,kmove2)
+kagday2 <- kagday2[3:1989,]
+
+kagtrain2 <- kagday2[1:1589,]
+kagtest2 <- kagday2[1590:1987,]
+
+kagd2tree <- ctree(Label ~ .,data = kagtrain2)
+
+kagd2predtree <- predict(kagd2tree, kagtest2)
+
+kTreecTab2  <- table(kagtest2$Label,kagd2predtree, dnn=c("actual", "predicted")) #check accuracy
+kagd2TreeAccuracy <- (kTreecTab2[1,1] + kTreecTab2[2,2])/nrow(kagtest2)
+kagd2TreeAccuracy
+```
